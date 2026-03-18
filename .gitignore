@@ -1,0 +1,10 @@
+# 本地配置（可含 API Key），不提交
+# scripts/config.yaml
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+*.egg-info/

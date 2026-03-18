@@ -1,0 +1,24 @@
+# 复制为 config.yaml 并填写你的数据源
+# 支持多个网页源，每个源生成一份 RSS（仅 type: html）
+
+# defaults：所有 feed 共用的默认值。每个 feeds 项里的 feed 会覆盖同名字段。
+# 例如 link、language 写在这里一次即可，各 feed 只写各自不同的 title、description。
+defaults:
+  feed:
+    link: "https://your-username.github.io/rsshub"
+    language: "zh-CN"
+
+# 多源列表：每个项生成一个 XML 文件
+feeds:
+  - output: claude.xml
+    feed:
+      title: "Claude Blog"
+      description: "Product news and best practices for teams building with Claude"
+    source:
+      type: html
+      url: "https://claude.com/blog"
+      item_selector: "article.card_blog_list_wrap"
+      selectors:
+        title: "h3.card_blog_list_title"
+        link: "a[href*='/blog/']@href"
+        published: "div[fs-list-field=date]"

@@ -1,0 +1,38 @@
+# 复制为 config.yaml 并填写你的数据源
+# 支持多个网页源，每个源生成一份 RSS（仅 type: html）
+
+# defaults：所有 feed 共用的默认值。每个 feeds 项里的 feed 会覆盖同名字段。
+# 例如 link、language 写在这里一次即可，各 feed 只写各自不同的 title、description。
+defaults:
+  feed:
+    link: "https://your-username.github.io/rsshub"
+    language: "zh-CN"
+
+# 多源列表：每个项生成一个 XML 文件
+feeds:
+  - output: blog.xml
+    feed:
+      title: "某站博客"
+      description: "从网页列表解析的 RSS"
+      # 未写 link，会用上面 defaults.feed.link
+    source:
+      type: html
+      url: "https://example.com/blog"
+      item_selector: "article.post"   # 每条目对应的 HTML 块
+      selectors:
+        title: "h2 a"
+        link: "h2 a@href"
+        description: ".excerpt"
+        published: "time@datetime"
+
+  # - output: news.xml
+  #   feed:
+  #     title: "新闻列表"
+  #   source:
+  #     type: html
+  #     url: "https://news.example.com"
+  #     item_selector: ".news-item"
+  #     selectors:
+  #       title: "a.title"
+  #       link: "a.title@href"
+  #       published: ".date"
