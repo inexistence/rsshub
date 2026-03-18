@@ -32,7 +32,17 @@ git remote add origin https://github.com/<你的用户名>/rsshub.git
 git push -u origin main
 ```
 
-### 2. 配置多数据源
+### 2. 设置工作流程权限（必选）
+
+要让 Actions 把生成的 RSS 自动提交回仓库，需要开启写入权限：
+
+- 仓库 **Settings** → **Actions** → **General**
+- 在 **Workflow permissions** 中选择 **Read and write permissions**
+- 点击 **Save**
+
+（无需单独配置 `GITHUB_TOKEN`，也无需勾选「Allow GitHub Actions to create and approve pull requests」。）
+
+### 3. 配置多数据源
 
 ```bash
 cp scripts/config.example.yaml scripts/config.yaml
@@ -45,7 +55,7 @@ cp scripts/config.example.yaml scripts/config.yaml
 
 注意：`config.yaml` 已被 `.gitignore`。若要在 Actions 里用，可在 workflow 里用 Secrets 生成该文件，或提交不含敏感信息的 config。
 
-### 3. 开启 GitHub Pages
+### 4. 开启 GitHub Pages
 
 - 仓库 **Settings** → **Pages**
 - **Source** 选 **Deploy from a branch**
@@ -58,7 +68,7 @@ https://<你的用户名>.github.io/rsshub/rss/blog.xml
 https://<你的用户名>.github.io/rsshub/rss/news.xml
 ```
 
-### 4. 可选：Repo 变量
+### 5. 可选：Repo 变量
 
 在 **Settings** → **Secrets and variables** → **Actions** → **Variables** 中可添加 `RSS_TITLE`、`RSS_LINK`、`RSS_DESCRIPTION`，作为未在 config 里写死的 feed 默认值。
 
