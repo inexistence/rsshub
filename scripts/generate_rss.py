@@ -152,12 +152,17 @@ def parse_date(s):
 
 
 def build_feed(feed_cfg: dict, entries: list) -> FeedGenerator:
-    """根据 feed 配置和条目生成 FeedGenerator."""
+    """根据 feed 配置和条目生成 FeedGenerator。
+    lastBuildDate 使用最新条目的发布日期，这样内容未变时时间戳稳定，不会触发无意义更新。
+    """
     fg = FeedGenerator()
     fg.title(feed_cfg.get("title", "RSS"))
     fg.link(href=feed_cfg.get("link", ""), rel="alternate")
     fg.description(feed_cfg.get("description", ""))
     fg.language(feed_cfg.get("language", "zh-CN"))
+
+    # 收集所有条目的发布日期，用于最后设置 feed 的 updated/lastBuildDate
+    pub_dates = []
     for e in entries:
         fe = fg.add_entry()
         fe.title(e.get("title", ""))
@@ -169,6 +174,13 @@ def build_feed(feed_cfg: dict, entries: list) -> FeedGenerator:
             dt = parse_date(e["published"])
             if dt:
                 fe.published(dt)
+                pub_dates.append(dt)
+
+    # 用最新条目的发布日期作为 lastBuildDate，内容不变则时间戳不变
+    if pub_dates:
+        fg.updated(max(pub_dates))
+    # 无条目时 feedgen 会使用当前时间，保持默认行为即可
+
     return fg
 
 
