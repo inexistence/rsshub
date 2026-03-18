@@ -3,9 +3,11 @@
 从多个网页数据源（HTML 解析）生成多份 rss.xml。
 配置见 config.yaml 的 feeds，每个 source 为 type: html。
 """
+import hashlib
 import os
+import re
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urljoin, urlparse, parse_qs
 
@@ -161,6 +163,8 @@ def parse_date(s):
         "%Y-%m-%d",
         "%B %d, %Y",  # March 13, 2026
         "%b %d, %Y",  # Feb 05, 2026
+        "%B %Y",  # June 2017（标题中常见）
+        "%b %Y",  # Jun 2017
         "%a, %d %b %Y %H:%M:%S %z",
     ):
         try:
@@ -171,6 +175,40 @@ def parse_date(s):
         except (ValueError, TypeError):
             continue
     return None
+
+
+def parse_date_from_title(title: str):
+    """从标题中尝试解析日期（如 "Policy announcement: June 2017" / "January 28, 2020"），用于无 published 的源。"""
+    if not title or not title.strip():
+        return None
+    # 匹配 "Month DD, YYYY" 或 "Month YYYY"（英文全称/缩写）
+    for pattern, fmt in (
+        (r"(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s*\d{4}", "%B %d, %Y"),
+        (r"(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},\s*\d{4}", "%b %d, %Y"),
+        (r"(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}", "%B %Y"),
+        (r"(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{4}", "%b %Y"),
+    ):
+        m = re.search(pattern, title, re.IGNORECASE)
+        if m:
+            dt = parse_date(m.group(0).strip())
+            if dt:
+                return dt
+    return None
+
+
+def stable_date_from_entries(entries: list) -> datetime | None:
+    """无日期源（如 GitHub Trending）：用条目内容哈希生成稳定时间戳，内容不变则不变。"""
+    if not entries:
+        return None
+    raw = "\n".join(
+        f"{e.get('title', '')}|{e.get('link', '')}" for e in entries
+    )
+    h = hashlib.sha256(raw.encode("utf-8")).hexdigest()
+    # 在固定范围内取一个确定性日期，避免每次都用当前时间
+    days_offset = int(h[:8], 16) % 3650  # 约 10 年内某天
+    return datetime(2020, 1, 1, tzinfo=timezone.utc).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    ) + timedelta(days=days_offset)
 
 
 def build_feed(feed_cfg: dict, entries: list) -> FeedGenerator:
@@ -193,15 +231,21 @@ def build_feed(feed_cfg: dict, entries: list) -> FeedGenerator:
             fe.link(href=e["link"])
         if e.get("summary"):
             fe.description(e["summary"])
-        if e.get("published"):
-            dt = parse_date(e["published"])
-            if dt:
-                fe.published(dt)
-                pub_dates.append(dt)
+        dt = parse_date(e["published"]) if e.get("published") else None
+        if not dt and e.get("title"):
+            dt = parse_date_from_title(e["title"])  # 如 Google Play 公告日期在标题里
+        if dt:
+            fe.published(dt)
+            pub_dates.append(dt)
 
     # 用最新条目的发布日期作为 lastBuildDate，内容不变则时间戳不变
     if pub_dates:
         fg.updated(max(pub_dates))
+    elif entries:
+        # 原网页无日期（如 GitHub Trending）：用内容哈希生成稳定时间戳
+        stable = stable_date_from_entries(entries)
+        if stable:
+            fg.updated(stable)
     # 无条目时 feedgen 会使用当前时间，保持默认行为即可
 
     return fg
