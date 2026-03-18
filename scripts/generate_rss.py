@@ -7,7 +7,7 @@ import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urlparse, parse_qs
 
 try:
     import yaml
@@ -118,6 +118,27 @@ def fetch_entries_from_html(source: dict):
                 entry[rss_key] = val
         if entry.get("title"):
             entries.append(entry)
+    # GitHub Trending：未登录时链接为 login?return_to= 或 /sponsors/，改为直链仓库
+    if "github.com" in url and "trending" in url and base_url:
+        for e in entries:
+            link = e.get("link") or ""
+            title = (e.get("title") or "").strip()
+            if "github.com/login?return_to=" in link:
+                try:
+                    parsed = urlparse(link)
+                    qs = parse_qs(parsed.query)
+                    return_to = (qs.get("return_to") or [None])[0]
+                    if return_to:
+                        path = return_to.lstrip("/")
+                        if path and "/" in path and " " not in path:
+                            e["link"] = f"{base_url}/{path}"
+                except Exception:
+                    pass
+            elif "/sponsors/" in link and title and "/" in title:
+                # title 形如 "owner /repo"，转为 https://github.com/owner/repo
+                repo_path = title.replace(" ", "").strip()
+                if repo_path.count("/") == 1:
+                    e["link"] = f"{base_url}/{repo_path}"
     return entries
 
 
@@ -155,6 +176,7 @@ def parse_date(s):
 def build_feed(feed_cfg: dict, entries: list) -> FeedGenerator:
     """根据 feed 配置和条目生成 FeedGenerator。
     lastBuildDate 使用最新条目的发布日期，这样内容未变时时间戳稳定，不会触发无意义更新。
+    条目的描述来自 selectors.summary（文章概要，可选）。
     """
     fg = FeedGenerator()
     fg.title(feed_cfg.get("title", "RSS"))
@@ -169,8 +191,8 @@ def build_feed(feed_cfg: dict, entries: list) -> FeedGenerator:
         fe.title(e.get("title", ""))
         if e.get("link"):
             fe.link(href=e["link"])
-        if e.get("description"):
-            fe.description(e["description"])
+        if e.get("summary"):
+            fe.description(e["summary"])
         if e.get("published"):
             dt = parse_date(e["published"])
             if dt:

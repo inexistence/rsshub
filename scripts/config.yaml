@@ -3,6 +3,7 @@
 
 # defaults：所有 feed 共用的默认值。每个 feeds 项里的 feed 会覆盖同名字段。
 # 例如 link、language 写在这里一次即可，各 feed 只写各自不同的 title、description。
+# source.selectors 下可写 summary（可选）：文章概要，输出为条目的 <description>。
 defaults:
   feed:
     link: "https://inexistence.github.io/rsshub"
@@ -37,16 +38,32 @@ feeds:
         link: "a[href*='/engineering/']@href"
         published: "div[class*='__date']"
 
-  # Google Play Console 公告（政策与帮助更新）
+  # Google Play Console 公告（政策与功能更新）
   - output: google-play-announcements.xml
     feed:
-      title: "Google Play Console Announcements"
-      description: "Play Console 政策与帮助中心公告（Policy announcements, deadlines, tips）"
+      title: "Google Play Announcements"
+      description: "Play Console policy and product announcements"
       link: "https://support.google.com/googleplay/android-developer/announcements/13412212"
     source:
       type: html
       url: "https://support.google.com/googleplay/android-developer/announcements/13412212"
-      item_selector: "ol li"
+      item_selector: "li.announcement__post"
       selectors:
         title: "h2"
-        link: "a[href*='answer']@href"
+        link: "a[href*='/answer/']@href"
+        summary: "div.announcement__post-body"
+
+  # GitHub Trending 今日热门仓库
+  - output: github-trending.xml
+    feed:
+      title: "GitHub Trending"
+      description: "Trending repositories on GitHub today"
+      link: "https://github.com/trending"
+    source:
+      type: html
+      url: "https://github.com/trending"
+      item_selector: "article"
+      selectors:
+        title: "h2 a"
+        link: "a[href*='/']@href"
+        summary: "p"

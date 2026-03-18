@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-从列表页 URL 抓取 HTML，推断条目容器与 title/link/published 选择器，输出可追加到 config.yaml 的配置片段。
+从列表页 URL 抓取 HTML，推断条目容器与 title/link/published/summary 选择器，输出可追加到 config.yaml 的配置片段。
 用法（在项目根目录）: python .agent/skills/rss-from-url/infer_rss_config.py <URL> [--output 文件名] [--title "标题"]
 与 rss-from-url skill 配合：抓取与推断由此脚本完成，人工或 AI 将输出写入 config 后运行 generate_rss.py 做验证。
 """
@@ -23,7 +23,9 @@ except ImportError:
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
 # 条目容器候选：能匹配到多条且每条内可解析出标题和链接
+# 含 summary 经验的列表项（如 Google Help 公告 li.announcement__post）优先
 ITEM_SELECTOR_CANDIDATES = [
+    "li[class*='announcement']",   # Google Help / 公告列表
     "article[class*='ArticleList']",
     "article[class*='card']",
     "article[class*='post']",
@@ -58,6 +60,24 @@ DATE_SELECTOR_CANDIDATES = [
     ("span[class*='date']", "text"),
     "[fs-list-field=date]",
 ]
+
+# 文章概要：取文本，长度适中（避免导航/按钮，也避免整篇正文）
+# 常见站点用 post-body / announcement__post-body / excerpt / summary 等，见 reference.md「概要/描述」
+SUMMARY_SPECS = [
+    "[class*='post-body']",       # 列表项正文块（如 Google Help 公告 li.announcement__post > div.announcement__post-body）
+    "p[class*='excerpt']",
+    "p[class*='summary']",
+    "[class*='excerpt']",
+    "[class*='summary']",
+    "[class*='description']",
+    "[class*='desc']",
+    "[class*='body-content']",
+    "[class*='body']",            # 正文容器（偏泛，放后面）
+    "[class*='content']",
+    "p",
+]
+SUMMARY_MIN_LEN = 20
+SUMMARY_MAX_LEN = 800  # 列表页摘要常见 100～600 字，略放宽以覆盖长摘要
 
 
 def fetch_soup(url: str, verify: bool = True) -> Tuple[BeautifulSoup, str, bool]:
@@ -120,12 +140,12 @@ def _select_attr(parent, spec: str, base_url: str) -> Optional[str]:
 
 def try_entries(soup: BeautifulSoup, base_url: str, item_sel: str, path_segment: str):
     """
-    在 soup 中用 item_sel 取条目，逐条尝试 title/link/date 候选，返回
-    (entries_count, title_spec, link_spec, published_spec, sample_date_str)。
+    在 soup 中用 item_sel 取条目，逐条尝试 title/link/date/summary 候选，返回
+    (entries_count, title_spec, link_spec, published_spec, sample_date_str, summary_spec)。
     """
     items = soup.select(item_sel)
     if len(items) < 2 or len(items) > 150:
-        return 0, None, None, None, None
+        return 0, None, None, None, None, None
 
     # 确定链接选择器：优先指向同站列表路径的 a 标签
     link_path = path_segment or "/"
@@ -138,7 +158,7 @@ def try_entries(soup: BeautifulSoup, base_url: str, item_sel: str, path_segment:
         "a@href",
     ]
 
-    best_title = best_link = best_published = None
+    best_title = best_link = best_published = best_summary = None
     sample_date = None
     ok_count = 0
 
@@ -178,11 +198,26 @@ def try_entries(soup: BeautifulSoup, base_url: str, item_sel: str, path_segment:
                     sample_date = date_val.strip()
                 break
 
+        summary_val = None
+        for spec in SUMMARY_SPECS:
+            summary_val = _select_text(el, spec)
+            if summary_val and SUMMARY_MIN_LEN <= len(summary_val) <= SUMMARY_MAX_LEN:
+                if best_summary is None:
+                    best_summary = spec
+                break
+
         ok_count += 1
 
     if ok_count < 2:
-        return 0, None, None, None, None
-    return ok_count, best_title or "h2|h3", best_link or "a[href*='/']@href", best_published, sample_date
+        return 0, None, None, None, None, None
+    return (
+        ok_count,
+        best_title or "h2|h3",
+        best_link or "a[href*='/']@href",
+        best_published,
+        sample_date,
+        best_summary,
+    )
 
 
 def infer_config(url: str, verify: bool = True) -> Optional[dict]:
@@ -194,7 +229,7 @@ def infer_config(url: str, verify: bool = True) -> Optional[dict]:
     path_segment = get_path_segment(url)
 
     for item_sel in ITEM_SELECTOR_CANDIDATES:
-        count, title_spec, link_spec, published_spec, sample_date = try_entries(
+        count, title_spec, link_spec, published_spec, sample_date, summary_spec = try_entries(
             soup, base_url, item_sel, path_segment
         )
         if count >= 2 and title_spec and link_spec is not None:
@@ -209,6 +244,8 @@ def infer_config(url: str, verify: bool = True) -> Optional[dict]:
             }
             if published_spec:
                 source["selectors"]["published"] = published_spec
+            if summary_spec:
+                source["selectors"]["summary"] = summary_spec
             if not ssl_ok:
                 source["verify"] = False
             return {
@@ -258,6 +295,8 @@ def main():
     ]
     if "published" in source["selectors"]:
         lines.append("        published: \"" + source["selectors"]["published"].replace('"', '\\"') + "\"")
+    if "summary" in source["selectors"]:
+        lines.append("        summary: \"" + source["selectors"]["summary"].replace('"', '\\"') + "\"")
     if source.get("verify") is False:
         lines.append("      verify: false")
 

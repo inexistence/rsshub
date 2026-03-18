@@ -22,7 +22,7 @@ feeds:
       selectors:
         title: "h2 a"
         link: "h2 a@href"
-        description: ".excerpt"
+        summary: ".excerpt"
         published: "time@datetime"
 
   # - output: news.xml
