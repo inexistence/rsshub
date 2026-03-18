@@ -139,6 +139,7 @@ def parse_date(s):
         "%Y-%m-%d %H:%M:%S",
         "%Y-%m-%d",
         "%B %d, %Y",  # March 13, 2026
+        "%b %d, %Y",  # Feb 05, 2026
         "%a, %d %b %Y %H:%M:%S %z",
     ):
         try:

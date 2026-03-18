@@ -18,7 +18,7 @@ GitHub Pages 提供订阅
 
 - **多源多 RSS**：在 `config.yaml` 里配置多个 `feeds`，每个源对应一个输出文件。
 - **网页解析**：用 CSS 选择器解析列表页，`item_selector` 选块，`selectors` 里配置 title/link/description/published，支持 `选择器@属性`（如 `a@href`、`time@datetime`）。
-- **自带 rss-from-url 技能**：在 Cursor 等支持 Agent Skills 的环境下，本项目包含 **rss-from-url** 技能。直接对 Agent 说「把某链接配成 RSS」「从链接生成配置」并给出列表页 URL，会按「抓取页面 → 推断选择器 → 写出 config」的流程自动生成对应 `config.yaml` 片段并处理日期格式。技能定义见 `.agent/skills/rss-from-url/SKILL.md`。
+- **自带 rss-from-url 技能**：在 Cursor 等支持 Agent Skills 的环境下，本项目包含 **rss-from-url** 技能。直接对 Agent 说「把某链接配成 RSS」「从链接生成配置」并给出列表页 URL，会按「抓取页面 → 推断选择器 → 写出 config → 检查验证」的流程处理。抓取与推断由 `.agent/skills/rss-from-url/infer_rss_config.py` 完成，验证则通过运行 `generate_rss.py` 并检查生成的 XML。技能定义见 `.agent/skills/rss-from-url/SKILL.md`。
 
 ## 快速开始
 

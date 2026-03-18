@@ -22,3 +22,17 @@ feeds:
         title: "h3.card_blog_list_title"
         link: "a[href*='/blog/']@href"
         published: "div[fs-list-field=date]"
+
+  - output: anthropic-engineering.xml
+    feed:
+      title: "Engineering at Anthropic"
+      description: "Inside the team building reliable AI systems"
+      link: "https://www.anthropic.com/engineering"
+    source:
+      type: html
+      url: "https://www.anthropic.com/engineering"
+      item_selector: "article[class*='ArticleList']"
+      selectors:
+        title: "h2|h3"
+        link: "a[href*='/engineering/']@href"
+        published: "div[class*='__date']"
