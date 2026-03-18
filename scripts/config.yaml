@@ -36,3 +36,17 @@ feeds:
         title: "h2|h3"
         link: "a[href*='/engineering/']@href"
         published: "div[class*='__date']"
+
+  # Google Play Console 公告（政策与帮助更新）
+  - output: google-play-announcements.xml
+    feed:
+      title: "Google Play Console Announcements"
+      description: "Play Console 政策与帮助中心公告（Policy announcements, deadlines, tips）"
+      link: "https://support.google.com/googleplay/android-developer/announcements/13412212"
+    source:
+      type: html
+      url: "https://support.google.com/googleplay/android-developer/announcements/13412212"
+      item_selector: "ol li"
+      selectors:
+        title: "h2"
+        link: "a[href*='answer']@href"
