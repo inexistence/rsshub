@@ -5,7 +5,7 @@
 # 例如 link、language 写在这里一次即可，各 feed 只写各自不同的 title、description。
 defaults:
   feed:
-    link: "https://your-username.github.io/rsshub"
+    link: "https://inexistence.github.io/rsshub"
     language: "zh-CN"
 
 # 多源列表：每个项生成一个 XML 文件
