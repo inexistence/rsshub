@@ -19,6 +19,7 @@ except ImportError as e:
     raise SystemExit(1) from e
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+RSS_OUTPUT_DIR = REPO_ROOT / "rss"  # 生成的 RSS 文件统一输出到此目录
 CONFIG_FILE = Path(__file__).parent / "config.yaml"
 
 
@@ -173,11 +174,11 @@ def build_feed(feed_cfg: dict, entries: list) -> FeedGenerator:
 
 def main():
     feeds_config = load_config()
-    REPO_ROOT.mkdir(parents=True, exist_ok=True)
+    RSS_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     generated = []
 
     for item in feeds_config:
-        output_path = REPO_ROOT / item["output"]
+        output_path = RSS_OUTPUT_DIR / item["output"]
         feed_cfg = item["feed"]
         source = item["source"]
 

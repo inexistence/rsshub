@@ -51,11 +51,11 @@ cp scripts/config.example.yaml scripts/config.yaml
 - **Source** 选 **Deploy from a branch**
 - **Branch** 选 `main`，目录选 **/ (root)**，Save
 
-订阅地址示例（多份 RSS）：
+订阅地址示例（多份 RSS，文件在 `rss/` 目录下）：
 
 ```
-https://<你的用户名>.github.io/rsshub/blog.xml
-https://<你的用户名>.github.io/rsshub/news.xml
+https://<你的用户名>.github.io/rsshub/rss/blog.xml
+https://<你的用户名>.github.io/rsshub/rss/news.xml
 ```
 
 ### 4. 可选：Repo 变量
@@ -74,12 +74,12 @@ https://<你的用户名>.github.io/rsshub/news.xml
 rsshub/
 ├── .agent/skills/rss-from-url/          # 自带技能：从链接生成 config
 │   └── SKILL.md
-├── .github/workflows/generate-rss.yml   # 定时 + 生成 + 提交所有 *.xml
+├── .github/workflows/generate-rss.yml   # 定时 + 生成 + 提交 rss/*.xml
 ├── scripts/
 │   ├── config.example.yaml              # 多源示例（仅网页解析）
 │   ├── config.yaml                      # 本地配置（不提交）
 │   └── generate_rss.py                  # 多源生成脚本
-├── *.xml                                # 生成的 RSS（由 Actions 提交）
+├── rss/                                 # 生成的 RSS（*.xml，由 Actions 提交）
 ├── requirements.txt
 └── README.md
 ```
