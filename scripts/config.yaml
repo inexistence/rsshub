@@ -18,10 +18,12 @@ pipelines:
 
 # 多源列表：每个项生成一个 XML 文件
 feeds:
-  - output: claude.xml
+  - dir: claude
+    output: feed.xml
     feed:
       title: "Claude Blog"
       description: "Product news and best practices for teams building with Claude"
+      link: "https://claude.com/blog"
     source:
       type: html
       url: "https://claude.com/blog"
@@ -30,8 +32,16 @@ feeds:
         title: "h3.card_blog_list_title"
         link: "a[href*='/blog/']@href"
         published: "div[fs-list-field=date]"
+    variants:
+      - output: zh.xml
+        feed:
+          title: "Claude 博客"
+          description: "Claude 产品动态与团队实践（中文）"
+        transforms:
+          use: to_zh
 
-  - output: anthropic-engineering.xml
+  - dir: anthropic-engineering
+    output: feed.xml
     feed:
       title: "Engineering at Anthropic"
       description: "Inside the team building reliable AI systems"
@@ -44,6 +54,13 @@ feeds:
         title: "h2|h3"
         link: "a[href*='/engineering/']@href"
         published: "div[class*='__date']"
+    variants:
+      - output: zh.xml
+        feed:
+          title: "Anthropic 工程博客"
+          description: "Anthropic 工程团队构建可靠 AI 系统（中文）"
+        transforms:
+          use: to_zh
 
   # Google Play Console 公告（政策与功能更新）
   - output: google-play-announcements.xml
