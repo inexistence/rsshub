@@ -1,0 +1,27 @@
+scripts/generate_rss.py
+  s_272a5d01c03f65::t_dbbb56118b929c 27-37
+  s_272a5d01c03f65::t_840f1e6d2f8269 112
+  s_272a5d01c03f65::t_12f5f93c26c039 157-208,210-211,213-218
+  s_272a5d01c03f65::t_16dea0c160f8d4 332-342
+scripts/config.yaml
+  s_272a5d01c03f65::t_73112a8d21ad95 78-82,84-87
+rss/deeplearning-letters.xml
+  s_272a5d01c03f65::t_140017f03e3d64 2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "46e1c86a69577b46f88d50784511c666e72de379",
+  "prompts": {},
+  "logical_commit_id": "46e1c86a69577b46f88d50784511c666e72de379",
+  "sessions": {
+    "s_272a5d01c03f65": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "6136fe4c-4e48-4988-af11-1dc92580d0b6",
+        "model": "default"
+      },
+      "human_author": "Jianbin <huangjianbin@imo.im>"
+    }
+  }
+}
