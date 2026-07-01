@@ -1,0 +1,27 @@
+rss/anthropic-engineering/zh.xml
+  s_b44d7f0ce08357::t_d3fbe799349f05 2
+rss/claude/zh.xml
+  s_b44d7f0ce08357::t_d3fbe799349f05 2
+scripts/rss/transforms/translate.py
+  s_b44d7f0ce08357::t_2bd5c7f5afcd68 36-50
+  s_b44d7f0ce08357::t_1fa605794b3808 154-159,165
+rss/deeplearning-letters/zh.xml
+  s_b44d7f0ce08357::t_d3fbe799349f05 2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "281cd6d04d450037040f76ea60fc4e3c27b905c6",
+  "prompts": {},
+  "logical_commit_id": "281cd6d04d450037040f76ea60fc4e3c27b905c6",
+  "sessions": {
+    "s_b44d7f0ce08357": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "2f9a849c-f1e9-4a0c-9e37-c38839e02ca2",
+        "model": "default"
+      },
+      "human_author": "Jianbin <huangjianbin@imo.im>"
+    }
+  }
+}
