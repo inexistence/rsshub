@@ -103,8 +103,7 @@ pipelines:
   to_zh:
     - type: translate
       target: zh-CN
-      fields: [title, summary]
-      feed_fields: [title, description]   # 仅当 feed 元数据为外文时使用
+      fields: [title, summary]            # 只译条目
       on_error: keep
 ```
 
@@ -112,11 +111,13 @@ pipelines:
 
 ```yaml
 transforms:
-  use: to_zh                    # 引用单个 pipeline
+  use: to_zh                    # 引用 pipeline
   append:                       # 追加步骤
-    - type: summarize           # 未来
+    - type: summarize
       fields: [summary]
 ```
+
+variant 的频道 title/description **手写目标语言**（`to_zh` 不译 feed 元数据）。若也要机器翻译频道信息，在 step 里单独加 `feed_fields: [title, description]`。
 
 也支持：直接写 step 列表、`pipeline: to_zh` 步骤、`then:` 嵌套子管道。
 
@@ -137,10 +138,7 @@ transforms:
         title: "吴恩达来信"
         language: zh-CN
       transforms:
-        - type: translate
-          target: zh-CN
-          fields: [title, summary]
-          on_error: keep
+        use: to_zh
 ```
 
 生成结果：

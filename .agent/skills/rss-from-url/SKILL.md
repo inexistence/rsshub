@@ -92,16 +92,13 @@ description: Turns a list-style webpage URL into RSS feed configuration (YAML). 
   variants:
     - output: zh.xml
       feed:
-        title: "中文标题"    # 已是中文则勿用 feed_fields 翻译
+        title: "中文标题"
         language: zh-CN
       transforms:
-        - type: translate
-          target: zh-CN
-          fields: [title, summary]
-          on_error: keep
+        use: to_zh
 ```
 
-- 可复用顶层 `pipelines` + `transforms.use: to_zh`（见 `config.example.yaml`）
+- 可复用顶层 `pipelines.to_zh`（只译条目；频道 title/description 在 variant 里手写中文）
 - 架构细节：**docs/ARCHITECTURE.md**；AI 入口：**AGENTS.md**
 
 ---

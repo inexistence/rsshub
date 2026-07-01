@@ -13,7 +13,6 @@ pipelines:
     - type: translate
       target: zh-CN
       fields: [title, summary]
-      feed_fields: [title, description]
       on_error: keep
 
 # 多源列表

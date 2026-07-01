@@ -14,7 +14,6 @@ pipelines:
     - type: translate
       target: zh-CN
       fields: [title, summary]
-      feed_fields: [title, description]
       on_error: keep
 
 # 多源列表：每个项生成一个 XML 文件
@@ -100,7 +99,4 @@ feeds:
           title: "吴恩达来信"
           description: "Andrew Ng 写给 AI 社区的个人信件（中文）"
         transforms:
-          - type: translate
-            target: zh-CN
-            fields: [title, summary]
-            on_error: keep
+          use: to_zh

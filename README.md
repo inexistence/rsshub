@@ -123,6 +123,8 @@ source:
 
 同一 source 可生成多个输出（如原文 + 中文版），只 fetch 一次。有 variants 时输出到 `rss/{dir}/` 子目录。详见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
 
+`to_zh` 只翻译条目；variant 的频道 title/description 需手写中文。
+
 ```yaml
 pipelines:
   to_zh:

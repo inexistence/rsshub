@@ -51,7 +51,7 @@ python scripts/generate_rss.py
 - **有 variants** 的 feed：同组输出到 `rss/<dir>/`（`dir` 可显式指定，否则取主 output 文件名 stem）
 - variant 的 `output` 只写文件名（如 `zh.xml`）
 - 转换结果缓存：`.cache/transforms/`（gitignore）
-- 频道元数据已是目标语言时，**不要**对 `feed_fields` 再翻译（见 `deeplearning-letters` 示例）
+- `pipelines.to_zh` 只译条目；variant 的频道 title/description 手写目标语言
 
 ## 文档索引
 
