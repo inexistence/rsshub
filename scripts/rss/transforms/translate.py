@@ -33,6 +33,21 @@ def _resolve_dest_lang(target: str) -> str:
     return LANG_MAP.get(target, target)
 
 
+def _target_requires_chinese(target: str) -> bool:
+    normalized = target.lower().replace("_", "-")
+    return normalized in ("zh", "zh-cn", "zh-tw")
+
+
+def _contains_chinese(text: str) -> bool:
+    return any("\u4e00" <= char <= "\u9fff" for char in text)
+
+
+def _validate_translation(text: str, target: str) -> None:
+    """中文目标语言必须含汉字，否则视为翻译失败（如 API 返回乱码）。"""
+    if _target_requires_chinese(target) and not _contains_chinese(text):
+        raise RuntimeError(f"翻译结果无效（目标 {target} 无中文）: {text[:80]!r}")
+
+
 class EasyTranslatorProvider:
     def __init__(self) -> None:
         try:
@@ -136,13 +151,18 @@ class TranslateTransform(Transform):
             key = transform_cache.cache_key(self.type, config, scope, name, text)
             cached = transform_cache.get(key)
             if cached is not None:
-                apply_result(index, name, cached)
-                continue
+                try:
+                    _validate_translation(cached, target)
+                    apply_result(index, name, cached)
+                    continue
+                except RuntimeError:
+                    pass
 
             try:
                 translated = provider.translate(
                     text, target=target, source=src_lang
                 )
+                _validate_translation(translated, target)
                 transform_cache.set(key, translated)
                 apply_result(index, name, translated)
             except Exception as exc:
