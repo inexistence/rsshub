@@ -1,0 +1,151 @@
+"""Translate transform using easytranslator (default) or other providers."""
+from __future__ import annotations
+
+from typing import Any
+
+from .registry import register
+from .base import (
+    Transform,
+    TransformContext,
+    handle_field_error,
+    iter_entry_fields,
+    iter_feed_fields,
+    set_entry_field,
+    set_feed_field,
+)
+from . import cache as transform_cache
+
+LANG_MAP = {
+    "zh-CN": "Chinese Simplified",
+    "zh-TW": "Chinese Traditional",
+    "zh": "Chinese Simplified",
+    "en": "English",
+    "ja": "Japanese",
+    "ko": "Korean",
+    "de": "German",
+    "fr": "French",
+    "es": "Spanish",
+    "ru": "Russian",
+}
+
+
+def _resolve_dest_lang(target: str) -> str:
+    return LANG_MAP.get(target, target)
+
+
+class EasyTranslatorProvider:
+    def __init__(self) -> None:
+        try:
+            from easytranslator import EasyTranslator
+        except ImportError as exc:
+            raise ImportError(
+                "translate transform 需要 easytranslator: pip install easytranslator"
+            ) from exc
+        self._client = EasyTranslator()
+
+    def translate(self, text: str, *, target: str, source: str = "auto") -> str:
+        result = self._client.translate(
+            text=text,
+            dest_lang=_resolve_dest_lang(target),
+            src_lang=source,
+            proxies=[],
+        )
+        if result.get("status") != "success":
+            raise RuntimeError(f"翻译失败: {result}")
+        translated = result.get("translated_text")
+        if not translated:
+            raise RuntimeError(f"翻译结果为空: {result}")
+        return translated
+
+
+_PROVIDERS: dict[str, type] = {
+    "easytranslator": EasyTranslatorProvider,
+}
+
+
+def get_provider(name: str) -> EasyTranslatorProvider:
+    cls = _PROVIDERS.get(name)
+    if cls is None:
+        raise ValueError(f"未知 translate provider: {name}")
+    return cls()
+
+
+@register
+class TranslateTransform(Transform):
+    type = "translate"
+
+    def apply(self, ctx: TransformContext, config: dict[str, Any]) -> None:
+        provider_name = config.get("provider", "easytranslator")
+        provider = get_provider(provider_name)
+        target = config.get("target")
+        if not target:
+            raise ValueError("translate transform 需要 target 字段")
+
+        src_lang = config.get("source", "auto")
+        entry_fields = config.get("fields") or ["title", "summary"]
+        feed_fields = config.get("feed_fields") or []
+
+        self._translate_scope(
+            ctx,
+            config,
+            provider,
+            target,
+            src_lang,
+            scope="entry",
+            fields=entry_fields,
+            iter_fields=lambda: iter_entry_fields(ctx, entry_fields),
+            apply_result=lambda idx, name, val: set_entry_field(ctx, idx, name, val),
+        )
+        self._translate_scope(
+            ctx,
+            config,
+            provider,
+            target,
+            src_lang,
+            scope="feed",
+            fields=feed_fields,
+            iter_fields=lambda: (
+                (name, text) for name, text in iter_feed_fields(ctx, feed_fields)
+            ),
+            apply_result=lambda _idx, name, val: set_feed_field(ctx, name, val),
+        )
+
+    def _translate_scope(
+        self,
+        ctx: TransformContext,
+        config: dict[str, Any],
+        provider: EasyTranslatorProvider,
+        target: str,
+        src_lang: str,
+        *,
+        scope: str,
+        fields: list[str],
+        iter_fields,
+        apply_result,
+    ) -> None:
+        if not fields:
+            return
+
+        for item in iter_fields():
+            if scope == "entry":
+                index, name, text = item
+            else:
+                name, text = item
+                index = None
+
+            key = transform_cache.cache_key(self.type, config, scope, name, text)
+            cached = transform_cache.get(key)
+            if cached is not None:
+                apply_result(index, name, cached)
+                continue
+
+            try:
+                translated = provider.translate(
+                    text, target=target, source=src_lang
+                )
+                transform_cache.set(key, translated)
+                apply_result(index, name, translated)
+            except Exception as exc:
+                mode = handle_field_error(config, exc)
+                if mode == "skip" and scope == "entry" and index is not None:
+                    ctx.entries[index]["_skip"] = True

@@ -80,6 +80,32 @@ description: Turns a list-style webpage URL into RSS feed configuration (YAML). 
 
 ---
 
+## 多语言变体（variants）
+
+若用户要求「加中文版」「-zh 变体」等，在已有 feed 上追加 `variants`，不要重复写 `source`。有 variants 时输出到 `rss/{dir}/` 子目录。
+
+```yaml
+- dir: my-feed
+  output: feed.xml
+  feed: { title: "Original", language: en }
+  source: { ... }          # 只写一次
+  variants:
+    - output: zh.xml
+      feed:
+        title: "中文标题"    # 已是中文则勿用 feed_fields 翻译
+        language: zh-CN
+      transforms:
+        - type: translate
+          target: zh-CN
+          fields: [title, summary]
+          on_error: keep
+```
+
+- 可复用顶层 `pipelines` + `transforms.use: to_zh`（见 `config.example.yaml`）
+- 架构细节：**docs/ARCHITECTURE.md**；AI 入口：**AGENTS.md**
+
+---
+
 ## 经验与排查
 
 - **快速排查 DOM**：脚本推断条数过少或不确定时，用 Python 对多种候选统计：对 `article`、`section`、`ol li`、`main ul li`、`[class*='item']` 等分别 `soup.select(sel)`，统计「匹配数、含 h2 数、含目标链接数」，选「匹配多且含 h2/链接多」的作为条目容器。
@@ -118,14 +144,4 @@ URL `https://claude.com/blog`，结构：`article.card_blog_list_wrap`，标题 
 
 ---
 
-**参考**：同目录 **reference.md** — 选择器快速检查脚本、常见日期格式与 strftime 对照表。
-
-**生成代码结构**（验证与扩展时参考）：
-
-| 路径 | 职责 |
-|------|------|
-| `scripts/generate_rss.py` | CLI 入口，遍历 feeds 并写 XML |
-| `scripts/rss/config.py` | 读取 `config.yaml` |
-| `scripts/rss/fetchers/` | 按 `source.type` 抓取 HTML / Next.js JSON |
-| `scripts/rss/dates.py` | 日期解析、无 published 时的稳定时间戳 |
-| `scripts/rss/feed.py` | 组装 RSS feed |
+**参考**：同目录 **reference.md** — 选择器快速检查脚本、常见日期格式与 strftime 对照表。架构与模块职责见仓库根 **docs/ARCHITECTURE.md**、**AGENTS.md**。

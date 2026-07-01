@@ -18,7 +18,10 @@ GitHub Pages 提供订阅
 
 - **多源多 RSS**：在 `config.yaml` 里配置多个 `feeds`，每个源对应一个输出文件。
 - **网页解析**：用 CSS 选择器解析列表页，`item_selector` 选块，`selectors` 里配置 title/link/description/published，支持 `选择器@属性`（如 `a@href`、`time@datetime`）。
+- **转换管道**：可选 transforms（如翻译），支持 `pipelines` 复用、`variants` 一源多输出（如中文版）。
 - **自带 rss-from-url 技能**：在 Cursor 等支持 Agent Skills 的环境下，本项目包含 **rss-from-url** 技能。直接对 Agent 说「把某链接配成 RSS」「从链接生成配置」并给出列表页 URL，会按「抓取页面 → 推断选择器 → 写出 config → 检查验证」的流程处理。抓取与推断由 `.agent/skills/rss-from-url/infer_rss_config.py` 完成，验证则通过运行 `generate_rss.py` 并检查生成的 XML。技能定义见 `.agent/skills/rss-from-url/SKILL.md`。
+
+> **开发者 / AI**：架构与扩展说明见 [AGENTS.md](AGENTS.md)、[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
 
 ## 快速开始
 
@@ -65,7 +68,8 @@ cp scripts/config.example.yaml scripts/config.yaml
 
 ```
 https://<你的用户名>.github.io/rsshub/rss/blog.xml
-https://<你的用户名>.github.io/rsshub/rss/news.xml
+https://<你的用户名>.github.io/rsshub/rss/deeplearning-letters/feed.xml
+https://<你的用户名>.github.io/rsshub/rss/deeplearning-letters/zh.xml
 ```
 
 ### 5. 可选：Repo 变量
@@ -82,14 +86,17 @@ https://<你的用户名>.github.io/rsshub/rss/news.xml
 
 ```
 rsshub/
+├── AGENTS.md                            # AI 协作入口
+├── docs/ARCHITECTURE.md                 # 架构、config schema、扩展指南
 ├── .agent/skills/rss-from-url/          # 自带技能：从链接生成 config
 │   └── SKILL.md
-├── .github/workflows/generate-rss.yml   # 定时 + 生成 + 提交 rss/*.xml
+├── .github/workflows/generate-rss.yml   # 定时 + 生成 + 提交 rss/
 ├── scripts/
-│   ├── config.example.yaml              # 多源示例（仅网页解析）
+│   ├── config.example.yaml              # 多源示例（含 variants / pipelines）
 │   ├── config.yaml                      # 本地配置（不提交）
-│   └── generate_rss.py                  # 多源生成脚本
-├── rss/                                 # 生成的 RSS（*.xml，由 Actions 提交）
+│   ├── generate_rss.py                  # CLI 入口
+│   └── rss/                             # 生成逻辑（fetchers、transforms 等）
+├── rss/                                 # 生成的 RSS（由 Actions 提交）
 ├── requirements.txt
 └── README.md
 ```
@@ -111,3 +118,26 @@ source:
 ```
 
 选择器支持 `|` 表示备选（第一个匹配到即用）。未配置的字段可省略。
+
+## 多语言变体（variants）
+
+同一 source 可生成多个输出（如原文 + 中文版），只 fetch 一次。有 variants 时输出到 `rss/{dir}/` 子目录。详见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
+
+```yaml
+pipelines:
+  to_zh:
+    - type: translate
+      target: zh-CN
+      fields: [title, summary]
+      on_error: keep
+
+feeds:
+  - dir: example
+    output: feed.xml
+    source: { ... }
+    variants:
+      - output: zh.xml
+        feed: { title: "示例（中文）", language: zh-CN }
+        transforms:
+          use: to_zh
+```

@@ -15,40 +15,84 @@ except ImportError as e:
     print("请安装依赖: pip install -r requirements.txt", file=sys.stderr)
     raise SystemExit(1) from e
 
-# 允许以 `python scripts/generate_rss.py` 直接运行
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from rss import (  # noqa: E402
     RSS_OUTPUT_DIR,
+    TransformContext,
     build_feed,
     fetch_entries_for_source,
     load_config,
+    run_pipeline,
 )
 
 
+def _write_feed(output_path: Path, feed_cfg: dict, entries: list[dict]) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fg = build_feed(feed_cfg, entries)
+    fg.rss_file(str(output_path), encoding="utf-8")
+    print(f"已生成: {output_path} ({len(entries)} 条)", file=sys.stderr)
+
+
+def _generate_output(
+    output_spec: dict,
+    entries: list[dict],
+    source: dict,
+) -> bool:
+    """Run transforms and write one output file. Returns True on success."""
+    output_path = RSS_OUTPUT_DIR / output_spec["output"]
+
+    ctx = TransformContext(
+        feed=output_spec["feed"].copy(),
+        entries=[entry.copy() for entry in entries],
+        source=source,
+    )
+    try:
+        run_pipeline(ctx, output_spec.get("transforms") or [])
+    except Exception as e:
+        if output_path.exists():
+            print(
+                f"转换失败，保留已有: {output_path} ({e})",
+                file=sys.stderr,
+            )
+            return False
+        raise
+
+    _write_feed(output_path, ctx.feed, ctx.entries)
+    return True
+
+
 def main():
-    feeds_config = load_config()
+    feed_groups = load_config()
     RSS_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    for item in feeds_config:
-        output_path = RSS_OUTPUT_DIR / item["output"]
-        feed_cfg = item["feed"]
-        source = item["source"]
+    for group in feed_groups:
+        source = group["source"]
+        outputs = group["outputs"]
 
         try:
             entries = fetch_entries_for_source(source)
         except Exception as e:
-            if output_path.exists():
-                print(
-                    f"抓取失败，保留已有: {output_path} ({e})",
-                    file=sys.stderr,
-                )
-                continue
-            raise
+            for output_spec in outputs:
+                output_path = RSS_OUTPUT_DIR / output_spec["output"]
+                if output_path.exists():
+                    print(
+                        f"抓取失败，保留已有: {output_path} ({e})",
+                        file=sys.stderr,
+                    )
+                else:
+                    print(
+                        f"抓取失败，跳过: {output_path} ({e})",
+                        file=sys.stderr,
+                    )
+            if not any(
+                (RSS_OUTPUT_DIR / o["output"]).exists() for o in outputs
+            ):
+                raise
+            continue
 
-        fg = build_feed(feed_cfg, entries)
-        fg.rss_file(str(output_path), encoding="utf-8")
-        print(f"已生成: {output_path} ({len(entries)} 条)", file=sys.stderr)
+        for output_spec in outputs:
+            _generate_output(output_spec, entries, source)
 
 
 if __name__ == "__main__":

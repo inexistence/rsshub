@@ -1,38 +1,65 @@
 # 复制为 config.yaml 并填写你的数据源
-# 支持多个网页源，每个源生成一份 RSS（仅 type: html）
+# 支持多个网页源，每个源生成一份 RSS（type: html / next_json）
 
-# defaults：所有 feed 共用的默认值。每个 feeds 项里的 feed 会覆盖同名字段。
-# 例如 link、language 写在这里一次即可，各 feed 只写各自不同的 title、description。
+# defaults：所有 feed 共用的默认值
 defaults:
   feed:
     link: "https://your-username.github.io/rsshub"
     language: "zh-CN"
 
-# 多源列表：每个项生成一个 XML 文件
+# 可复用转换管道（variants 通过 transforms.use 引用）
+pipelines:
+  to_zh:
+    - type: translate
+      target: zh-CN
+      fields: [title, summary]
+      feed_fields: [title, description]
+      on_error: keep
+
+# 多源列表
 feeds:
   - output: blog.xml
     feed:
       title: "某站博客"
       description: "从网页列表解析的 RSS"
-      # 未写 link，会用上面 defaults.feed.link
     source:
       type: html
       url: "https://example.com/blog"
-      item_selector: "article.post"   # 每条目对应的 HTML 块
+      item_selector: "article.post"
       selectors:
         title: "h2 a"
         link: "h2 a@href"
         summary: ".excerpt"
         published: "time@datetime"
 
-  # - output: news.xml
+  # 一源多输出：原文 + 中文版（只 fetch 一次，输出到 rss/{dir}/ 子目录）
+  # - dir: example-blog
+  #   output: feed.xml
   #   feed:
-  #     title: "新闻列表"
+  #     title: "Example Blog"
+  #     language: en
   #   source:
   #     type: html
-  #     url: "https://news.example.com"
-  #     item_selector: ".news-item"
+  #     url: "https://example.com/blog"
+  #     item_selector: "article.post"
   #     selectors:
-  #       title: "a.title"
-  #       link: "a.title@href"
-  #       published: ".date"
+  #       title: "h2 a"
+  #       link: "h2 a@href"
+  #       summary: ".excerpt"
+  #   variants:
+  #     - output: zh.xml
+  #       feed:
+  #         title: "示例博客"
+  #         language: zh-CN
+  #       transforms:
+  #         use: to_zh
+  #     - output: zh-brief.xml
+  #       feed:
+  #         title: "示例博客简报"
+  #         language: zh-CN
+  #       transforms:
+  #         use: to_zh
+  #         append:
+  #           - type: summarize    # 未来实现
+  #             fields: [summary]
+  #             max_chars: 150
