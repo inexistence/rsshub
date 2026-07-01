@@ -38,6 +38,14 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Cache transform translations
+        uses: actions/cache@v4
+        with:
+          path: .cache/transforms
+          key: transforms-v1-${{ hashFiles('scripts/config.yaml', 'scripts/rss/transforms/**', 'requirements.txt') }}
+          restore-keys: |
+            transforms-v1-
+
       - name: Optional config from repo
         run: |
           if [ -f scripts/config.yaml ]; then

@@ -177,11 +177,13 @@ class SummarizeTransform(Transform):
 |------|------|
 | fetch 失败 | 组内已有 XML 则保留并 stderr 告警；全无则 raise |
 | transform 失败 | 该 output 已有 XML 则保留；否则 raise |
-| 转换缓存 | `.cache/transforms/`，内容不变不重复调用翻译 API |
+| 转换缓存 | `.cache/transforms/`（gitignore），原文+配置不变则跳过翻译 API |
 
 ## CI
 
 `.github/workflows/generate-rss.yml`：定时 / 手动 / `scripts/**` push 触发 → `python scripts/generate_rss.py` → commit `rss/` 变更。
+
+CI 通过 `actions/cache` 持久化 `.cache/transforms/`，跨 run 复用译文；key 随 `config.yaml`、transform 代码、`requirements.txt` 变化而失效。
 
 ## 相关文档
 
