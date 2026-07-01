@@ -1,0 +1,24 @@
+scripts/config.yaml
+  s_272a5d01c03f65::t_a631e8ab4454d5 70-84
+rss/deeplearning-letters.xml
+  s_272a5d01c03f65::t_4a60bf21bc0d56 1-2
+scripts/generate_rss.py
+  s_272a5d01c03f65::t_a11092c57a7650 160
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "c3f45f95956348bdfcd78673e8ba410850934767",
+  "prompts": {},
+  "logical_commit_id": "c3f45f95956348bdfcd78673e8ba410850934767",
+  "sessions": {
+    "s_272a5d01c03f65": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "6136fe4c-4e48-4988-af11-1dc92580d0b6",
+        "model": "default"
+      },
+      "human_author": "Jianbin <huangjianbin@imo.im>"
+    }
+  }
+}
