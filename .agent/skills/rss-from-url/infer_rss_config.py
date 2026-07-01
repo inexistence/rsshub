@@ -3,7 +3,7 @@
 """
 从列表页 URL 抓取 HTML，推断条目容器与 title/link/published/summary 选择器，输出可追加到 config.yaml 的配置片段。
 用法（在项目根目录）: python .agent/skills/rss-from-url/infer_rss_config.py <URL> [--output 文件名] [--title "标题"]
-与 rss-from-url skill 配合：抓取与推断由此脚本完成，人工或 AI 将输出写入 config 后运行 generate_rss.py 做验证。
+与 rss-from-url skill 配合：抓取与推断由此脚本完成，人工或 AI 将输出写入 config 后运行 scripts/generate_rss.py 做验证。
 """
 import argparse
 import re
@@ -50,7 +50,7 @@ TITLE_SPECS = [
     "a[href*='/']",  # 用链接文本兜底
 ]
 
-# 日期：先属性再文本；需与 generate_rss.parse_date 已支持格式一致
+# 日期：先属性再文本；需与 scripts/rss/dates.py 的 parse_date 已支持格式一致
 DATE_SELECTOR_CANDIDATES = [
     ("time@datetime", "attr"),
     ("time", "text"),
@@ -304,7 +304,7 @@ def main():
     print("", file=sys.stderr)
     print(f"推断条目数: {entry_count}", file=sys.stderr)
     if sample_date:
-        print(f"示例日期字符串: {sample_date!r} → 若 generate_rss.parse_date 不支持，需在 parse_date 中增加对应格式", file=sys.stderr)
+        print(f"示例日期字符串: {sample_date!r} → 若 scripts/rss/dates.py 的 parse_date 不支持，需在该文件中增加对应格式", file=sys.stderr)
     config_rel = "scripts/config.yaml"
     print(f"请将上述 YAML 追加到 {config_rel} 的 feeds 下，然后运行: python scripts/generate_rss.py 做验证。", file=sys.stderr)
 

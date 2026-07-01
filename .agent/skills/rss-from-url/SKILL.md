@@ -25,7 +25,7 @@ description: Turns a list-style webpage URL into RSS feed configuration (YAML). 
 在项目根目录执行本 skill 目录下的脚本：
 
 ```bash
-.venv/bin/python .agent/skills/rss-from-url/infer_rss_config.py .agent/skills/rss-from-url/infer_rss_config.py "<URL>" [--output 文件名] [--title "标题"]
+.venv/bin/python .agent/skills/rss-from-url/infer_rss_config.py "<URL>" [--output 文件名] [--title "标题"]
 ```
 
 - 脚本会抓取 URL、推断 `item_selector` 与 `selectors`（title / link / published），并输出可追加到 config 的 YAML 片段。
@@ -67,7 +67,7 @@ description: Turns a list-style webpage URL into RSS feed configuration (YAML). 
 
 ### 3. 日期格式
 
-若脚本 stderr 打印了「示例日期字符串」且 `generate_rss.parse_date` 尚未支持：在 `scripts/generate_rss.py` 的 `parse_date` 里往 `for fmt in (...)` 追加对应格式（如 `"%B %d, %Y"`、`"%b %d, %Y"`），naive datetime 用 `dt.replace(tzinfo=timezone.utc)`。更多格式见 **reference.md**。
+若脚本 stderr 打印了「示例日期字符串」且 `scripts/rss/dates.py` 的 `parse_date` 尚未支持：在该文件的 `parse_date` 里往 `for fmt in (...)` 追加对应格式（如 `"%B %d, %Y"`、`"%b %d, %Y"`），naive datetime 用 `dt.replace(tzinfo=timezone.utc)`。更多格式见 **reference.md**。
 
 ### 4. 检查与验证（必须）
 
@@ -91,7 +91,7 @@ description: Turns a list-style webpage URL into RSS feed configuration (YAML). 
 - **条目容器**：按优先级尝试 `article[class*="ArticleList"]` → `article` → `[class*="card"]` → `[class*="post"]` → `ol li`（序号列表页）→ `[class*="item"]` → `main ul li`，选能匹配多条且每条内能区分标题/链接的。
 - **标题**：容器内 `h1 a` / `h2 a` / `h3 a`（文本）或 `h1` / `h2` / `h3` / `[class*="title"]`，可用 `h2|h3`。
 - **链接**：`h2 a@href`、`a[href*="/blog/"]@href` 等，href 需 `urljoin(base_url, href)` 转绝对地址。
-- **日期**：`time@datetime` 或 `time` 文本，或 `[class*="date"]`、`[class*="__date"]`、`[fs-list-field="date"]`；记下页面格式在 `parse_date` 中追加（见步骤 3），格式对照见 **reference.md**。
+- **日期**：`time@datetime` 或 `time` 文本，或 `[class*="date"]`、`[class*="__date"]`、`[fs-list-field="date"]`；记下页面格式在 `scripts/rss/dates.py` 的 `parse_date` 中追加（见步骤 3），格式对照见 **reference.md**。
 
 选择器约定：`selector` 取文本，`selector@attr` 取属性（如 `a@href`），`a|b` 表示先试 a 再试 b。
 
@@ -119,3 +119,13 @@ URL `https://claude.com/blog`，结构：`article.card_blog_list_wrap`，标题 
 ---
 
 **参考**：同目录 **reference.md** — 选择器快速检查脚本、常见日期格式与 strftime 对照表。
+
+**生成代码结构**（验证与扩展时参考）：
+
+| 路径 | 职责 |
+|------|------|
+| `scripts/generate_rss.py` | CLI 入口，遍历 feeds 并写 XML |
+| `scripts/rss/config.py` | 读取 `config.yaml` |
+| `scripts/rss/fetchers/` | 按 `source.type` 抓取 HTML / Next.js JSON |
+| `scripts/rss/dates.py` | 日期解析、无 published 时的稳定时间戳 |
+| `scripts/rss/feed.py` | 组装 RSS feed |

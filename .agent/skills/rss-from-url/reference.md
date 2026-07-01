@@ -51,4 +51,4 @@ for sel in ["article", "[class*='card']", "[class*='post']", "li[class*='announc
 | 13 Mar 2026 | %d %b %Y |
 | Wed, 18 Mar 2026 | %a, %d %b %Y |
 
-未支持时在 `parse_date` 的 `for fmt in (...)` 中追加，并保证返回的 datetime 带 tzinfo（如 `timezone.utc`）。
+未支持时在 `scripts/rss/dates.py` 的 `parse_date` 的 `for fmt in (...)` 中追加，并保证返回的 datetime 带 tzinfo（如 `timezone.utc`）。
