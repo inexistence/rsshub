@@ -157,6 +157,7 @@ def parse_date(s):
         return None
     s = s.strip()
     for fmt in (
+        "%Y-%m-%dT%H:%M:%S.%f%z",  # 2026-06-26T07:30:05.000-07:00
         "%Y-%m-%dT%H:%M:%SZ",
         "%Y-%m-%dT%H:%M:%S",
         "%Y-%m-%d %H:%M:%S",

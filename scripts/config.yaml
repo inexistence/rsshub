@@ -67,3 +67,18 @@ feeds:
         title: "h2 a"
         link: "a[href*='/']@href"
         summary: "p"
+
+  # DeepLearning.AI — Andrew Ng's Letters
+  - output: deeplearning-letters.xml
+    feed:
+      title: "Letters from Andrew Ng"
+      description: "Personal messages to the AI community from Andrew Ng"
+      link: "https://www.deeplearning.ai/the-batch/tag/letters"
+    source:
+      type: html
+      url: "https://www.deeplearning.ai/the-batch/tag/letters"
+      item_selector: "article"
+      selectors:
+        title: "h2"
+        link: "a[href*='/the-batch']@href"
+        published: "time@datetime"
