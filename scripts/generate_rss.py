@@ -24,6 +24,17 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 RSS_OUTPUT_DIR = REPO_ROOT / "rss"  # 生成的 RSS 文件统一输出到此目录
 CONFIG_FILE = Path(__file__).parent / "config.yaml"
 
+DEFAULT_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/120.0.0.0 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+}
+BUILD_ID_RE = re.compile(r'"buildId"\s*:\s*"([^"]+)"')
+
 
 def load_config():
     """
@@ -98,8 +109,7 @@ def fetch_entries_from_html(source: dict):
     if not item_selector or not selectors:
         return []
 
-    headers = source.get("headers") or {}
-    headers.setdefault("User-Agent", "Mozilla/5.0 (compatible; RSSHub/1.0)")
+    headers = {**DEFAULT_HEADERS, **(source.get("headers") or {})}
     verify = source.get("verify", True)
     r = requests.get(url, headers=headers, timeout=30, verify=verify)
     r.raise_for_status()
@@ -144,11 +154,68 @@ def fetch_entries_from_html(source: dict):
     return entries
 
 
-def fetch_entries_for_source(source: dict):
-    """从 source（type: html）解析条目，返回列表."""
-    if not source or source.get("type") != "html":
+def _get_json_field(obj: dict, spec: str):
+    """从 JSON 对象按字段名取值，支持 a|b 优先取第一个非空."""
+    if not spec or not obj:
+        return None
+    for part in spec.split("|"):
+        val = obj.get(part.strip())
+        if val:
+            return val.strip() if isinstance(val, str) else val
+    return None
+
+
+def fetch_entries_from_next_json(source: dict):
+    """从 Next.js _next/data JSON API 解析条目（绕过部分站点的 HTML 反爬）."""
+    bootstrap_url = source.get("bootstrap_url") or source.get("url")
+    page_path = source.get("page_path")
+    selectors = source.get("selectors") or {}
+    items_key = source.get("items_key", "posts")
+    link_prefix = source.get("link_prefix", "")
+    if not bootstrap_url or not page_path or not selectors:
         return []
-    return fetch_entries_from_html(source)
+
+    headers = {**DEFAULT_HEADERS, **(source.get("headers") or {})}
+    verify = source.get("verify", True)
+    r = requests.get(bootstrap_url, headers=headers, timeout=30, verify=verify)
+    r.raise_for_status()
+    m = BUILD_ID_RE.search(r.text)
+    if not m:
+        raise ValueError(f"未在 {bootstrap_url} 中找到 Next.js buildId")
+    build_id = m.group(1)
+
+    base = f"{urlparse(bootstrap_url).scheme}://{urlparse(bootstrap_url).netloc}"
+    json_url = f"{base}/_next/data/{build_id}{page_path}.json"
+    r = requests.get(json_url, headers=headers, timeout=30, verify=verify)
+    r.raise_for_status()
+    posts = (r.json().get("pageProps") or {}).get(items_key) or []
+
+    entries = []
+    for post in posts:
+        if not isinstance(post, dict):
+            continue
+        entry = {}
+        for rss_key, field_spec in selectors.items():
+            val = _get_json_field(post, field_spec)
+            if rss_key == "link" and val and link_prefix and not str(val).startswith("http"):
+                val = f"{link_prefix.rstrip('/')}/{str(val).lstrip('/')}"
+            if val:
+                entry[rss_key] = val
+        if entry.get("title"):
+            entries.append(entry)
+    return entries[:50]
+
+
+def fetch_entries_for_source(source: dict):
+    """从 source 解析条目，返回列表."""
+    if not source:
+        return []
+    source_type = source.get("type")
+    if source_type == "html":
+        return fetch_entries_from_html(source)
+    if source_type == "next_json":
+        return fetch_entries_from_next_json(source)
+    return []
 
 
 def parse_date(s):
@@ -262,7 +329,17 @@ def main():
         feed_cfg = item["feed"]
         source = item["source"]
 
-        entries = fetch_entries_for_source(source)
+        try:
+            entries = fetch_entries_for_source(source)
+        except Exception as e:
+            if output_path.exists():
+                print(
+                    f"抓取失败，保留已有: {output_path} ({e})",
+                    file=sys.stderr,
+                )
+                continue
+            raise
+
         fg = build_feed(feed_cfg, entries)
         fg.rss_file(str(output_path), encoding="utf-8")
         generated.append(output_path)
