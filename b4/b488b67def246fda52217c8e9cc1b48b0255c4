@@ -1,0 +1,74 @@
+scripts/rss/fetchers/email.py
+  s_d8096fe78ed4fc::t_3a7b77322d67ac 90-94
+  s_d8096fe78ed4fc::t_2475ca8038bbe4 180-181
+  s_d8096fe78ed4fc::t_f04594b95df1f9 1-89,95-115,117-133,151-155,159-160,163-179,182-237
+  s_d8096fe78ed4fc::t_a6592084fe8dea 116
+  s_d8096fe78ed4fc::t_cf46260fc4b6d9 156-158,161-162
+  s_d8096fe78ed4fc::t_e71f6cb8c034e2 134-150
+scripts/rss/fetchers/__init__.py
+  s_d8096fe78ed4fc::t_433ec4b5a23eb1 2,16-17
+scripts/generate_rss.py
+  s_d8096fe78ed4fc::t_9721e26e9727f0 3-4
+  s_d8096fe78ed4fc::t_b58f9503684cd7 20-23
+.github/workflows/generate-rss.yml
+  s_d8096fe78ed4fc::t_9cfbd925056b9f 54,56
+  s_d8096fe78ed4fc::t_da420662a7bd31 60-63
+docs/CONFIG.md
+  s_d8096fe78ed4fc::t_2c4512ead6abbf 3
+  s_d8096fe78ed4fc::t_e75c685fff9c6e 234-235
+  s_d8096fe78ed4fc::t_aaeb9079bac229 169-175,181-191,195-205,207,209,233,236-237
+  s_d8096fe78ed4fc::t_109cc40b116911 176-180,192-194,206,208,210-232
+rss/mail-163.xml
+  s_d8096fe78ed4fc::t_84a53c2e68acbd 2
+  s_d8096fe78ed4fc::t_e59a7a9f06d6ab 1
+README.md
+  s_d8096fe78ed4fc::t_e004e74bd8139a 60
+  s_d8096fe78ed4fc::t_f3b4e7ede57431 57-58
+  s_d8096fe78ed4fc::t_5cf75938842407 100
+  s_d8096fe78ed4fc::t_cb855e643c88b6 76,78-79
+scripts/rss/env.py
+  s_d8096fe78ed4fc::t_9259681cdf1147 1-16
+.gitignore
+  s_d8096fe78ed4fc::t_ba4c971792fb59 1
+  s_d8096fe78ed4fc::t_503bfd20ebf637 2
+requirements.txt
+  s_d8096fe78ed4fc::t_8ae6dea95f5b3a 6
+docs/ARCHITECTURE.md
+  s_d8096fe78ed4fc::t_4441b8e7afa6bb 23
+  s_d8096fe78ed4fc::t_0ac6780959212d 32-33
+scripts/config.yaml
+  s_d8096fe78ed4fc::t_07a912db373ad9 121,123-124,127-129,132
+  s_d8096fe78ed4fc::t_bb7f5c53b29542 122,125-126,133-134
+  s_d8096fe78ed4fc::t_9c2dce219e2163 130-131
+  s_d8096fe78ed4fc::t_b79ba3a379dea1 1-2
+scripts/config.example.yaml
+  s_d8096fe78ed4fc::t_a31b3d3ade05b9 58-60,62-64,67-71
+  s_d8096fe78ed4fc::t_013c93f1556301 57,61,65-66
+  s_d8096fe78ed4fc::t_91c8f2c9c2436a 1
+AGENTS.md
+  s_d8096fe78ed4fc::t_214f7755312d7b 16
+  s_d8096fe78ed4fc::t_02c3c7198c3fd4 18
+.env.example
+  s_d8096fe78ed4fc::t_773bbb136d5fb2 1-6
+rss/anthropic-engineering/zh.xml
+  s_d8096fe78ed4fc::t_7fc45a9309df99 2
+rss/claude/zh.xml
+  s_d8096fe78ed4fc::t_6fb74c8ecb29a6 2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "b4b488b67def246fda52217c8e9cc1b48b0255c4",
+  "prompts": {},
+  "logical_commit_id": "b4b488b67def246fda52217c8e9cc1b48b0255c4",
+  "sessions": {
+    "s_d8096fe78ed4fc": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "fbd420ef-9d7b-4178-8763-21d7256b09fc",
+        "model": "default"
+      },
+      "human_author": "Jianbin <huangjianbin@imo.im>"
+    }
+  }
+}
