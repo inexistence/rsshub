@@ -1,0 +1,25 @@
+scripts/config.yaml
+  s_7043f62b5ee810::t_7b93442c840b8c 95-115
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "0cb646dc3b6296c2a2c1f9b563d21b5d3d8bebd6",
+  "prompts": {},
+  "logical_commit_id": "0cb646dc3b6296c2a2c1f9b563d21b5d3d8bebd6",
+  "humans": {
+    "h_abce196c1e83f2": {
+      "author": "Jianbin <huangjianbin@imo.im>"
+    }
+  },
+  "sessions": {
+    "s_7043f62b5ee810": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "cb20c1ed-f49b-453b-9287-508ab1b5be9e",
+        "model": "default"
+      },
+      "human_author": "Jianbin <huangjianbin@imo.im>"
+    }
+  }
+}
