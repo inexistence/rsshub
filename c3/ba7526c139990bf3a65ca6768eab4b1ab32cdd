@@ -1,0 +1,31 @@
+.github/workflows/generate-rss.yml
+  s_d8096fe78ed4fc::t_1dd3312e90ed78 17
+scripts/config.yaml
+  h_abce196c1e83f2 107
+README.md
+  s_d8096fe78ed4fc::t_75770389abf6b7 79
+docs/CONFIG.md
+  s_d8096fe78ed4fc::t_79abdb6a58748e 220,222-228,234-241
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.3",
+  "base_commit_sha": "c3ba7526c139990bf3a65ca6768eab4b1ab32cdd",
+  "prompts": {},
+  "logical_commit_id": "c3ba7526c139990bf3a65ca6768eab4b1ab32cdd",
+  "humans": {
+    "h_abce196c1e83f2": {
+      "author": "Jianbin <huangjianbin@imo.im>"
+    }
+  },
+  "sessions": {
+    "s_d8096fe78ed4fc": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "fbd420ef-9d7b-4178-8763-21d7256b09fc",
+        "model": "default"
+      },
+      "human_author": "Jianbin <huangjianbin@imo.im>"
+    }
+  }
+}
