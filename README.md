@@ -21,7 +21,7 @@ GitHub Pages 提供订阅
 - **转换管道**：可选 transforms（如翻译），支持 `pipelines` 复用、`variants` 一源多输出（如中文版）。
 - **自带 rss-from-url 技能**：在 Cursor 等支持 Agent Skills 的环境下，本项目包含 **rss-from-url** 技能。直接对 Agent 说「把某链接配成 RSS」「从链接生成配置」并给出列表页 URL，会按「抓取页面 → 推断选择器 → 写出 config → 检查验证」的流程处理。抓取与推断由 `.agent/skills/rss-from-url/infer_rss_config.py` 完成，验证则通过运行 `generate_rss.py` 并检查生成的 XML。技能定义见 `.agent/skills/rss-from-url/SKILL.md`。
 
-> **开发者 / AI**：架构与扩展说明见 [AGENTS.md](AGENTS.md)、[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
+> **开发者 / AI**：配置见 [docs/CONFIG.md](docs/CONFIG.md)，架构见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
 
 ## 快速开始
 
@@ -51,10 +51,10 @@ git push -u origin main
 cp scripts/config.example.yaml scripts/config.yaml
 ```
 
-编辑 `scripts/config.yaml`：
+编辑 `scripts/config.yaml`（字段说明见 **[docs/CONFIG.md](docs/CONFIG.md)**）：
 
 - **defaults.feed**：所有 feed 共用的默认值（如 link、language）。每个 feed 里只写要覆盖或各自不同的字段（如 title、description）。
-- **feeds**：列表，每项包含 **output**（生成文件名）、**feed**（该订阅的 title/link/description）、**source**（type: html，以及 url、item_selector、selectors）。见 `config.example.yaml`。
+- **feeds**：列表，每项包含 **output**（生成文件名）、**feed**（该订阅的 title/link/description）、**source**（type: html 或 next_json）。见 `config.example.yaml`。
 
 注意：`config.yaml` 已被 `.gitignore`。若要在 Actions 里用，可在 workflow 里用 Secrets 生成该文件，或提交不含敏感信息的 config。
 
@@ -87,7 +87,9 @@ https://<你的用户名>.github.io/rsshub/rss/deeplearning-letters/zh.xml
 ```
 rsshub/
 ├── AGENTS.md                            # AI 协作入口
-├── docs/ARCHITECTURE.md                 # 架构、config schema、扩展指南
+├── docs/
+│   ├── CONFIG.md                        # config.yaml 完整配置说明
+│   └── ARCHITECTURE.md                  # 架构、CI、扩展 transform
 ├── .agent/skills/rss-from-url/          # 自带技能：从链接生成 config
 │   └── SKILL.md
 ├── .github/workflows/generate-rss.yml   # 定时 + 生成 + 提交 rss/
@@ -121,7 +123,7 @@ source:
 
 ## 多语言变体（variants）
 
-同一 source 可生成多个输出（如原文 + 中文版），只 fetch 一次。有 variants 时输出到 `rss/{dir}/` 子目录。详见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
+同一 source 可生成多个输出（如原文 + 中文版），只 fetch 一次。有 variants 时输出到 `rss/{dir}/` 子目录。详见 **[docs/CONFIG.md](docs/CONFIG.md)**。
 
 `to_zh` 只翻译条目；variant 的频道 title/description 需手写中文。
 

@@ -1,42 +1,43 @@
 # 复制为 config.yaml 并填写你的数据源
-# 支持多个网页源，每个源生成一份 RSS（type: html / next_json）
+# 完整配置说明：docs/CONFIG.md
 
-# defaults：所有 feed 共用的默认值
 defaults:
   feed:
     link: "https://your-username.github.io/rsshub"
     language: "zh-CN"
 
-# 可复用转换管道（variants 通过 transforms.use 引用）
 pipelines:
   to_zh:
     - type: translate
       target: zh-CN
-      fields: [title, summary]
+      fields: [title, summary]   # 只译条目；频道 title/description 在 variant 里手写
       on_error: keep
 
-# 多源列表
 feeds:
+  # 单文件输出 → rss/blog.xml
   - output: blog.xml
     feed:
       title: "某站博客"
       description: "从网页列表解析的 RSS"
+      link: "https://example.com/blog"
     source:
       type: html
       url: "https://example.com/blog"
       item_selector: "article.post"
       selectors:
         title: "h2 a"
-        link: "h2 a@href"
+        link: "h2 a@href"        # selector@attr；a|b 表示优先 a
         summary: ".excerpt"
         published: "time@datetime"
+      # verify: false            # 本机 SSL 报错时取消注释
 
-  # 一源多输出：原文 + 中文版（只 fetch 一次，输出到 rss/{dir}/ 子目录）
-  # - dir: example-blog
+  # 一源多输出 → rss/example/feed.xml + rss/example/zh.xml
+  # - dir: example
   #   output: feed.xml
   #   feed:
   #     title: "Example Blog"
   #     language: en
+  #     link: "https://example.com/blog"
   #   source:
   #     type: html
   #     url: "https://example.com/blog"
@@ -44,7 +45,6 @@ feeds:
   #     selectors:
   #       title: "h2 a"
   #       link: "h2 a@href"
-  #       summary: ".excerpt"
   #   variants:
   #     - output: zh.xml
   #       feed:
@@ -52,13 +52,5 @@ feeds:
   #         language: zh-CN
   #       transforms:
   #         use: to_zh
-  #     - output: zh-brief.xml
-  #       feed:
-  #         title: "示例博客简报"
-  #         language: zh-CN
-  #       transforms:
-  #         use: to_zh
-  #         append:
-  #           - type: summarize    # 未来实现
-  #             fields: [summary]
-  #             max_chars: 150
+
+  # Next.js JSON 源（HTML 被 403 时用）→ 见 docs/CONFIG.md

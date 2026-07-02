@@ -47,8 +47,7 @@ python scripts/generate_rss.py
 
 ## 约定
 
-- **无 variants** 的 feed：输出到 `rss/<output>`
-- **有 variants** 的 feed：同组输出到 `rss/<dir>/`（`dir` 可显式指定，否则取主 output 文件名 stem）
+- 无 variants → `rss/<output>`；有 variants → `rss/<dir>/`（见 **docs/CONFIG.md**）
 - variant 的 `output` 只写文件名（如 `zh.xml`）
 - 转换结果缓存：`.cache/transforms/`（gitignore；CI 经 `actions/cache` 跨 run 复用）
 - `pipelines.to_zh` 只译条目；variant 的频道 title/description 手写目标语言
@@ -56,5 +55,6 @@ python scripts/generate_rss.py
 ## 文档索引
 
 - 用户部署：`README.md`
-- 架构与 config schema：`docs/ARCHITECTURE.md`
+- **config.yaml 完整说明：`docs/CONFIG.md`**
+- 架构与扩展：`docs/ARCHITECTURE.md`
 - 从 URL 加源：`.agent/skills/rss-from-url/SKILL.md`

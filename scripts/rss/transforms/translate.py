@@ -28,6 +28,31 @@ LANG_MAP = {
     "ru": "Russian",
 }
 
+# easytranslator 引擎优先级（数字越小越优先）
+EASYTRANSLATOR_ENGINES = [
+    {"id": "alibaba", "name": "Alibaba", "priority": 10},
+    {"id": "baidu", "name": "Baidu", "priority": 10},
+    {"id": "modernMt", "name": "ModernMT", "priority": 20},
+    {"id": "iciba", "name": "Iciba", "priority": 15},
+    {"id": "google", "name": "Google", "priority": 4},
+    {"id": "bing", "name": "Bing", "priority": 5},
+    {"id": "lingvanex", "name": "Lingvanex", "priority": 20},
+    {"id": "itranslate", "name": "Itranslate", "priority": 20},
+    {"id": "sysTran", "name": "SysTran", "priority": 20},
+    {"id": "argos", "name": "ArgoS", "priority": 20},
+    {"id": "reverso", "name": "Reverso", "priority": 20},
+    {"id": "deepl", "name": "DeepL", "priority": 5},
+    {"id": "cloudTranslation", "name": "Cloud Translation", "priority": 3},
+    {"id": "qqTranSmart", "name": "QQ Translate Smart", "priority": 5},
+    {"id": "translateCom", "name": "Translate Com", "priority": 15},
+    {"id": "sogou", "name": "Sogou", "priority": 5},
+    {"id": "qqFanyi", "name": "QQ Fanyi", "priority": 10},
+    {"id": "papago", "name": "Papago", "priority": 15},
+    {"id": "youdao", "name": "Youdao", "priority": 15},
+    {"id": "iflyrec", "name": "iFlyrec", "priority": 30},
+    {"id": "caiyun", "name": "Caiyun", "priority": 15},
+]
+
 
 def _resolve_dest_lang(target: str) -> str:
     return LANG_MAP.get(target, target)
@@ -49,14 +74,14 @@ def _validate_translation(text: str, target: str) -> None:
 
 
 class EasyTranslatorProvider:
-    def __init__(self) -> None:
+    def __init__(self, engines: list[dict] | None = None) -> None:
         try:
             from easytranslator import EasyTranslator
         except ImportError as exc:
             raise ImportError(
                 "translate transform 需要 easytranslator: pip install easytranslator"
             ) from exc
-        self._client = EasyTranslator()
+        self._client = EasyTranslator(translators=engines or EASYTRANSLATOR_ENGINES)
 
     def translate(self, text: str, *, target: str, source: str = "auto") -> str:
         result = self._client.translate(
@@ -78,11 +103,11 @@ _PROVIDERS: dict[str, type] = {
 }
 
 
-def get_provider(name: str) -> EasyTranslatorProvider:
+def get_provider(name: str, *, engines: list[dict] | None = None) -> EasyTranslatorProvider:
     cls = _PROVIDERS.get(name)
     if cls is None:
         raise ValueError(f"未知 translate provider: {name}")
-    return cls()
+    return cls(engines=engines)
 
 
 @register
@@ -91,7 +116,8 @@ class TranslateTransform(Transform):
 
     def apply(self, ctx: TransformContext, config: dict[str, Any]) -> None:
         provider_name = config.get("provider", "easytranslator")
-        provider = get_provider(provider_name)
+        engines = config.get("engines")
+        provider = get_provider(provider_name, engines=engines)
         target = config.get("target")
         if not target:
             raise ValueError("translate transform 需要 target 字段")

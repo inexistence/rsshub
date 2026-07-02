@@ -99,7 +99,7 @@ description: Turns a list-style webpage URL into RSS feed configuration (YAML). 
 ```
 
 - 可复用顶层 `pipelines.to_zh`（只译条目；频道 title/description 在 variant 里手写中文）
-- 架构细节：**docs/ARCHITECTURE.md**；AI 入口：**AGENTS.md**
+- 架构细节：**docs/ARCHITECTURE.md**；配置字段：**docs/CONFIG.md**；AI 入口：**AGENTS.md**
 
 ---
 

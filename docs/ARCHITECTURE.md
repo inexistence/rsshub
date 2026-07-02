@@ -40,115 +40,9 @@ scripts/
 
 ## config.yaml Schema
 
-### 顶层
+完整字段说明、示例与 transforms 参考见 **[docs/CONFIG.md](CONFIG.md)**。
 
-| 键 | 说明 |
-|----|------|
-| `defaults.feed` | 所有 feed 共用的 title/link/description/language 默认值 |
-| `pipelines` | 命名转换管道，供 `transforms.use` 引用 |
-| `feeds` | 数据源与输出列表 |
-
-### feeds[] 每项
-
-| 键 | 说明 |
-|----|------|
-| `output` | 输出文件名（有 variants 时建议 `feed.xml`） |
-| `dir` | 可选；有 variants 时作为子目录名，默认取 `output` 的 stem |
-| `feed` | 频道元数据（title、description、link、language） |
-| `source` | 数据源配置（见下） |
-| `transforms` | 可选；主输出的转换管道 |
-| `variants` | 可选；同 source 的变体输出列表 |
-
-### source 类型
-
-**html**
-
-```yaml
-source:
-  type: html
-  url: "https://example.com/list"
-  item_selector: "article.post"
-  selectors:
-    title: "h2"
-    link: "a@href"
-    summary: ".excerpt"      # 可选 → RSS description
-    published: "time@datetime"
-  verify: false              # 可选，SSL 问题时
-```
-
-**next_json**（Next.js `_next/data`，绕过 HTML 反爬）
-
-```yaml
-source:
-  type: next_json
-  bootstrap_url: "https://example.com/page"
-  page_path: "/path/to/list"
-  link_prefix: "https://example.com"
-  items_key: posts           # 默认 posts
-  selectors:
-    title: "title"
-    link: "slug"
-    published: "published_at"
-    summary: "excerpt|custom_excerpt"
-```
-
-选择器约定：`selector` 取文本，`selector@attr` 取属性，`a|b` 优先取第一个匹配。
-
-### pipelines 与 transforms
-
-**命名管道**（顶层 `pipelines`）：
-
-```yaml
-pipelines:
-  to_zh:
-    - type: translate
-      target: zh-CN
-      fields: [title, summary]            # 只译条目
-      on_error: keep
-```
-
-**引用方式**：
-
-```yaml
-transforms:
-  use: to_zh                    # 引用 pipeline
-  append:                       # 追加步骤
-    - type: summarize
-      fields: [summary]
-```
-
-variant 的频道 title/description **手写目标语言**（`to_zh` 不译 feed 元数据）。若也要机器翻译频道信息，在 step 里单独加 `feed_fields: [title, description]`。
-
-也支持：直接写 step 列表、`pipeline: to_zh` 步骤、`then:` 嵌套子管道。
-
-**on_error**：`keep`（保留原文，默认）| `skip`（丢弃条目）| `fail`（抛错）
-
-### variants 与输出路径
-
-有 `variants` 时，同组所有 output 写入 `rss/{dir}/`：
-
-```yaml
-- dir: deeplearning-letters
-  output: feed.xml
-  feed: { title: "Letters from Andrew Ng", language: en }
-  source: { ... }
-  variants:
-    - output: zh.xml
-      feed:
-        title: "吴恩达来信"
-        language: zh-CN
-      transforms:
-        use: to_zh
-```
-
-生成结果：
-
-```
-rss/deeplearning-letters/feed.xml   # 原文
-rss/deeplearning-letters/zh.xml     # 中文版
-```
-
-无 variants 的 feed 仍输出到 `rss/<output>` 根目录。
+此处仅保留要点：
 
 ## Transform 扩展
 
@@ -187,6 +81,7 @@ CI 通过 `actions/cache` 持久化 `.cache/transforms/`，跨 run 复用译文�
 
 ## 相关文档
 
-- AI 入口：`AGENTS.md`
+- 配置完整说明：`CONFIG.md`
+- AI 入口：`../AGENTS.md`
 - 从 URL 加源：`.agent/skills/rss-from-url/SKILL.md`
 - 部署与用户说明：`README.md`
