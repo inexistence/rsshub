@@ -67,6 +67,24 @@ def _contains_chinese(text: str) -> bool:
     return any("\u4e00" <= char <= "\u9fff" for char in text)
 
 
+def _predominantly_chinese(text: str) -> bool:
+    """文本以中文为主时无需再译成中文。"""
+    chars = [c for c in text if not c.isspace()]
+    if not chars:
+        return False
+    cjk = sum(1 for c in chars if "\u4e00" <= c <= "\u9fff")
+    return cjk >= 2 and cjk / len(chars) >= 0.3
+
+
+def _resolve_source_lang(text: str, target: str, configured: str) -> str:
+    """避免 auto 把英文误判为中文，触发 zh→zh 引擎报错。"""
+    if configured != "auto":
+        return configured
+    if _target_requires_chinese(target) and not _contains_chinese(text):
+        return "en"
+    return configured
+
+
 def _validate_translation(text: str, target: str) -> None:
     """中文目标语言必须含汉字，否则视为翻译失败（如 API 返回乱码）。"""
     if _target_requires_chinese(target) and not _contains_chinese(text):
@@ -184,9 +202,13 @@ class TranslateTransform(Transform):
                 except RuntimeError:
                     pass
 
+            if _target_requires_chinese(target) and _predominantly_chinese(text):
+                continue
+
+            effective_src = _resolve_source_lang(text, target, src_lang)
             try:
                 translated = provider.translate(
-                    text, target=target, source=src_lang
+                    text, target=target, source=effective_src
                 )
                 _validate_translation(translated, target)
                 transform_cache.set(key, translated)
