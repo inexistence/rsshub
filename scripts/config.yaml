@@ -100,9 +100,10 @@ feeds:
       description: "Personal messages to the AI community from Andrew Ng"
       link: "https://www.deeplearning.ai/the-batch/tag/letters"
     source:
-      # Next.js JSON API：CI 上 HTML 页常被 403，改走 _next/data
+      # Next.js JSON API：CI 上 HTML 页常被 403，直接带 build_id 走 _next/data
       type: next_json
       bootstrap_url: "https://www.deeplearning.ai/the-batch"
+      build_id: "TdfK9MGL3WE2qhcWdeTCk"
       page_path: "/the-batch/tag/letters"
       link_prefix: "https://www.deeplearning.ai/the-batch"
       selectors:

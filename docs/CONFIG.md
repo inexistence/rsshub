@@ -141,6 +141,7 @@ source:
 source:
   type: next_json
   bootstrap_url: "https://www.example.com/the-batch"
+  build_id: "abc123"               # 可选，CI 上 HTML 被 403 时建议填写
   page_path: "/the-batch/tag/letters"
   link_prefix: "https://www.example.com/the-batch"
   items_key: posts                 # 可选，默认 posts
@@ -154,13 +155,16 @@ source:
 
 | 字段 | 必填 | 说明 |
 |------|------|------|
-| `bootstrap_url` | 是* | 用于从 HTML 提取 buildId 的页面 |
+| `bootstrap_url` | 是* | 用于拼 JSON 域名；无 `build_id` 时也从该页 HTML 提取 buildId |
+| `build_id` | 否 | Next.js buildId；填写后跳过 HTML 抓取（适合 GitHub Actions 等 CI） |
 | `page_path` | 是 | JSON 路径，如 `/the-batch/tag/letters` |
 | `link_prefix` | 否 | `link` 为 slug 时的 URL 前缀 |
 | `items_key` | 否 | `pageProps` 下数组字段名，默认 `posts` |
 | `selectors` | 是 | JSON 字段名映射；支持 `a|b` 优先 |
 
 *`url` 可代替 `bootstrap_url`。
+
+**buildId 获取顺序**：`build_id` 配置 → `.cache/next_json/` 缓存 → 抓取 `bootstrap_url` HTML。站点重新部署后若 JSON 返回 404，本地重新抓取可更新缓存，或手动改 `build_id`（在 HTML 源码中搜 `"buildId"`）。
 
 ---
 

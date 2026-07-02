@@ -41,7 +41,9 @@ jobs:
       - name: Cache transform translations
         uses: actions/cache@v4
         with:
-          path: .cache/transforms
+          path: |
+            .cache/transforms
+            .cache/next_json
           key: transforms-v1-${{ hashFiles('scripts/config.yaml', 'scripts/rss/transforms/**', 'requirements.txt') }}
           restore-keys: |
             transforms-v1-
