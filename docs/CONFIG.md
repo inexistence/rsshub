@@ -217,9 +217,14 @@ python scripts/generate_rss.py
 
 `.env` 位于仓库根目录，已被 `.gitignore`；`generate_rss.py` 启动时会自动加载。
 
-#### GitHub Actions：Repository Secrets
+#### GitHub Actions：Secrets
 
-在仓库 **Settings** → **Secrets and variables** → **Actions** → **New repository secret** 添加与 config 中 `*_env` **同名**的 Secret：
+凭证可放在 **Repository secrets** 或 **Environment secrets**（推荐按邮箱单独建 Environment，如 `EMAIL_163`）。
+
+**方式 A：Environment secrets（推荐）**
+
+1. **Settings** → **Environments** → 新建或打开 `EMAIL_163`
+2. 在 **Environment secrets** 中添加（名称须与 config 里 `*_env` 一致）：
 
 | Secret 名称 | 示例值 | 说明 |
 |-------------|--------|------|
@@ -227,7 +232,13 @@ python scripts/generate_rss.py
 | `EMAIL_163_USER` | `you@163.com` | 邮箱账号 |
 | `EMAIL_163_PASSWORD` | `xxxx` | 163 授权码（非登录密码） |
 
-workflow 需把 Secret 注入为环境变量（见 `.github/workflows/generate-rss.yml` 中 `Generate RSS` 步骤的 `env`）。Secret 名称必须与 `config.yaml` 里的 `host_env` / `user_env` / `password_env` 字符串**完全一致**。
+3. workflow 的 job 需声明 `environment: EMAIL_163`（见 `.github/workflows/generate-rss.yml`），否则读不到 Environment secrets。
+
+**方式 B：Repository secrets**
+
+在 **Settings** → **Secrets and variables** → **Actions** → **Repository secrets** 添加上表同名 Secret；workflow 里 `env:` 引用方式相同，可去掉 job 上的 `environment:`。
+
+workflow 中 `Generate RSS` 步骤通过 `env` 注入变量；Secret 名称必须与 `config.yaml` 里的 `host_env` / `user_env` / `password_env` 字符串**完全一致**。
 
 Gmail 等需开启 IMAP 并使用[应用专用密码](https://support.google.com/accounts/answer/185833)。
 

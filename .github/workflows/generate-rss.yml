@@ -14,6 +14,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: EMAIL_163   # 使用 Environment secrets（Settings → Environments）
     permissions:
       contents: write   # 允许 push 更新后的 RSS 文件
     steps:

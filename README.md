@@ -76,7 +76,7 @@ https://<你的用户名>.github.io/rsshub/rss/deeplearning-letters/zh.xml
 ### 5. 可选：Repo 变量与 Secrets
 
 - **Variables**（`RSS_TITLE`、`RSS_LINK`、`RSS_DESCRIPTION`）：未在 config 里写死的 feed 默认值。
-- **Secrets**（邮箱源）：`EMAIL_163_HOST`、`EMAIL_163_USER`、`EMAIL_163_PASSWORD` 等，名称须与 config 里 `*_env` 一致。配置步骤见 **[docs/CONFIG.md](docs/CONFIG.md)**。
+- **Secrets**（邮箱源）：在 Environment `EMAIL_163` 或 Repository secrets 中配置 `EMAIL_163_HOST`、`EMAIL_163_USER`、`EMAIL_163_PASSWORD`，名称须与 config 里 `*_env` 一致。详见 **[docs/CONFIG.md](docs/CONFIG.md)**。
 
 ## 定时与触发
 
