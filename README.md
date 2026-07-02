@@ -54,9 +54,10 @@ cp scripts/config.example.yaml scripts/config.yaml
 编辑 `scripts/config.yaml`（字段说明见 **[docs/CONFIG.md](docs/CONFIG.md)**）：
 
 - **defaults.feed**：所有 feed 共用的默认值（如 link、language）。每个 feed 里只写要覆盖或各自不同的字段（如 title、description）。
-- **feeds**：列表，每项包含 **output**（生成文件名）、**feed**（该订阅的 title/link/description）、**source**（type: html 或 next_json）。见 `config.example.yaml`。
+- **feeds**：列表，每项包含 **output**（生成文件名）、**feed**（该订阅的 title/link/description）、**source**（`html`、`next_json` 或 `email`）。见 `config.example.yaml`。
+- **邮箱源凭证**：在 config 里只写 `host_env` / `user_env` / `password_env` 变量名；本地复制 `.env.example` 为 `.env` 填入实际值，详见 [CONFIG.md](docs/CONFIG.md)。
 
-注意：`config.yaml` 已被 `.gitignore`。若要在 Actions 里用，可在 workflow 里用 Secrets 生成该文件，或提交不含敏感信息的 config。
+注意：`config.yaml` **可提交**（只写环境变量名，不含密码）；`.env` 含真实凭证，**勿提交**。CI 跑邮箱源时在 GitHub **Secrets** 配置同名变量（见 [CONFIG.md — GitHub Actions](docs/CONFIG.md#github-actionsrepository-secrets)）。
 
 ### 4. 开启 GitHub Pages
 
@@ -72,9 +73,10 @@ https://<你的用户名>.github.io/rsshub/rss/deeplearning-letters/feed.xml
 https://<你的用户名>.github.io/rsshub/rss/deeplearning-letters/zh.xml
 ```
 
-### 5. 可选：Repo 变量
+### 5. 可选：Repo 变量与 Secrets
 
-在 **Settings** → **Secrets and variables** → **Actions** → **Variables** 中可添加 `RSS_TITLE`、`RSS_LINK`、`RSS_DESCRIPTION`，作为未在 config 里写死的 feed 默认值。
+- **Variables**（`RSS_TITLE`、`RSS_LINK`、`RSS_DESCRIPTION`）：未在 config 里写死的 feed 默认值。
+- **Secrets**（邮箱源）：`EMAIL_163_HOST`、`EMAIL_163_USER`、`EMAIL_163_PASSWORD` 等，名称须与 config 里 `*_env` 一致。配置步骤见 **[docs/CONFIG.md](docs/CONFIG.md)**。
 
 ## 定时与触发
 
@@ -95,7 +97,7 @@ rsshub/
 ├── .github/workflows/generate-rss.yml   # 定时 + 生成 + 提交 rss/
 ├── scripts/
 │   ├── config.example.yaml              # 多源示例（含 variants / pipelines）
-│   ├── config.yaml                      # 本地配置（不提交）
+│   ├── config.yaml                      # feed 配置（提交）；密钥见 .env
 │   ├── generate_rss.py                  # CLI 入口
 │   └── rss/                             # 生成逻辑（fetchers、transforms 等）
 ├── rss/                                 # 生成的 RSS（由 Actions 提交）

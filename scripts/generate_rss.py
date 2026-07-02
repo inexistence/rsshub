@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-从多个网页数据源（HTML 解析）生成多份 rss.xml。
-配置见 config.yaml 的 feeds，每个 source 为 type: html。
+从多个数据源（HTML / Next.js JSON / IMAP 邮箱）生成多份 rss.xml。
+配置见 config.yaml 的 feeds。
 """
 import sys
 from pathlib import Path
@@ -16,6 +16,10 @@ except ImportError as e:
     raise SystemExit(1) from e
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from rss.env import load_dotenv  # noqa: E402
+
+load_dotenv()
 
 from rss import (  # noqa: E402
     RSS_OUTPUT_DIR,

@@ -51,12 +51,16 @@ jobs:
       - name: Optional config from repo
         run: |
           if [ -f scripts/config.yaml ]; then
-            echo "Using scripts/config.yaml"
+            echo "Using scripts/config.yaml from repo"
           else
-            echo "No config.yaml, script will use defaults/env"
+            echo "No scripts/config.yaml; copy from config.example.yaml"
           fi
 
       - name: Generate RSS
+        env:
+          EMAIL_163_HOST: ${{ secrets.EMAIL_163_HOST }}
+          EMAIL_163_USER: ${{ secrets.EMAIL_163_USER }}
+          EMAIL_163_PASSWORD: ${{ secrets.EMAIL_163_PASSWORD }}
         run: python scripts/generate_rss.py
 
       - name: Commit and push if changed

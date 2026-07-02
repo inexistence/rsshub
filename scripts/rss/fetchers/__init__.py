@@ -1,4 +1,5 @@
 """Dispatch entry fetching to source-type-specific fetchers."""
+from .email import fetch_entries_from_email
 from .html import fetch_entries_from_html
 from .next_json import fetch_entries_from_next_json
 
@@ -12,4 +13,6 @@ def fetch_entries_for_source(source: dict) -> list[dict]:
         return fetch_entries_from_html(source)
     if source_type == "next_json":
         return fetch_entries_from_next_json(source)
+    if source_type == "email":
+        return fetch_entries_from_email(source)
     return []

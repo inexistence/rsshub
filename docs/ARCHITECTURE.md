@@ -20,7 +20,7 @@ flowchart LR
 ```
 scripts/
 ├── generate_rss.py          # CLI：fetch → transform → write
-├── config.yaml              # 本地配置（不提交）
+├── config.yaml              # feed 配置（提交）；敏感凭证见 .env / Secrets
 ├── config.example.yaml
 └── rss/
     ├── config.py            # 加载配置、解析路径
@@ -29,7 +29,8 @@ scripts/
     ├── feed.py              # FeedGenerator 组装
     ├── fetchers/
     │   ├── html.py          # CSS 选择器解析 HTML
-    │   └── next_json.py     # Next.js _next/data JSON
+    │   ├── next_json.py     # Next.js _next/data JSON
+    │   └── email.py         # IMAP 邮箱
     └── transforms/
         ├── base.py          # TransformContext、字段 helper
         ├── registry.py      # REGISTRY、@register

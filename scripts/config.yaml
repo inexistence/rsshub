@@ -1,5 +1,5 @@
-# 复制为 config.yaml 并填写你的数据源
-# 支持多个网页源，每个源生成一份 RSS（仅 type: html）
+# feed 配置（提交仓库）。敏感凭证勿写在此，用 *_env + .env / GitHub Secrets
+# 支持 html、next_json、email 数据源
 
 # defaults：所有 feed 共用的默认值。每个 feeds 项里的 feed 会覆盖同名字段。
 # 例如 link、language 写在这里一次即可，各 feed 只写各自不同的 title、description。
@@ -118,3 +118,17 @@ feeds:
           description: "Andrew Ng 写给 AI 社区的个人信件（中文）"
         transforms:
           use: to_zh
+
+  # 163 邮箱 — RSS 文件夹
+  - output: mail-163.xml
+    feed:
+      title: "163 RSS"
+      description: "RSS 文件夹最近邮件"
+      link: "https://mail.163.com"
+    source:
+      type: email
+      host_env: EMAIL_163_HOST
+      user_env: EMAIL_163_USER
+      password_env: EMAIL_163_PASSWORD
+      folder: RSS
+      limit: 15

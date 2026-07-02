@@ -13,9 +13,9 @@ config.yaml → fetch（一次/source）→ transforms（可选）→ build_feed
 | 路径 | 职责 |
 |------|------|
 | `scripts/generate_rss.py` | CLI 入口 |
-| `scripts/config.yaml` | 本地 feed 配置（gitignore，勿提交密钥） |
+| `scripts/config.yaml` | feed 配置（提交仓库）；密钥用 `*_env` + `.env` / GitHub Secrets |
 | `scripts/rss/config.py` | 解析 feeds / pipelines / variants / 输出路径 |
-| `scripts/rss/fetchers/` | `html`、`next_json` 数据源 |
+| `scripts/rss/fetchers/` | `html`、`next_json`、`email` 数据源 |
 | `scripts/rss/transforms/` | 转换管道（Registry + translate 等） |
 | `scripts/rss/dates.py` | 日期解析 |
 | `scripts/rss/feed.py` | feedgen 组装 RSS |

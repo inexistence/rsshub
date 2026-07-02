@@ -1,12 +1,11 @@
-# 本地配置（可含 API Key），不提交
-# scripts/config.yaml
+# 敏感凭证放 .env（不提交）；scripts/config.yaml 可提交，勿写密码
+.env
 
 # Python
 __pycache__/
 *.py[cod]
 .venv/
 venv/
-.env
 *.egg-info/
 
 # Transform cache

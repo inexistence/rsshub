@@ -1,6 +1,6 @@
 # config.yaml 配置说明
 
-`scripts/config.yaml` 控制所有 RSS 源的抓取、转换与输出。复制 `scripts/config.example.yaml` 为起点。
+`scripts/config.yaml` 控制所有 RSS 源的抓取、转换与输出，**随仓库提交**。复制 `scripts/config.example.yaml` 为起点，或直接向现有 `feeds` 追加。
 
 ```bash
 cp scripts/config.example.yaml scripts/config.yaml
@@ -165,6 +165,75 @@ source:
 *`url` 可代替 `bootstrap_url`。
 
 **buildId 获取顺序**：`build_id` 配置 → `.cache/next_json/` 缓存 → 抓取 `bootstrap_url` HTML。站点重新部署后若 JSON 返回 404，本地重新抓取可更新缓存，或手动改 `build_id`（在 HTML 源码中搜 `"buildId"`）。
+
+### type: email
+
+通过 IMAP 从邮箱拉取邮件，适合订阅邮件列表、Newsletter 等。
+
+```yaml
+source:
+  type: email
+  host_env: EMAIL_163_HOST
+  user_env: EMAIL_163_USER
+  password_env: EMAIL_163_PASSWORD
+  folder: RSS                        # 可选，默认 INBOX
+  limit: 15                          # 可选，最多条数，默认 50
+  since_days: 30                     # 可选，只拉最近 N 天
+  from_filter: newsletter@example.com  # 可选，发件人过滤
+  subject_filter: "Weekly Digest"    # 可选，主题过滤
+  link_from_body: true               # 可选，从正文提取首个 URL 作为 link
+  summary_max_chars: 500             # 可选，摘要最大长度
+  body_format: plain                 # 可选，plain | html
+```
+
+| 字段 | 必填 | 说明 |
+|------|------|------|
+| `type` | 是 | `email` |
+| `host_env` | 是 | IMAP 服务器对应的环境变量名，如 `EMAIL_163_HOST` |
+| `user_env` | 是 | 邮箱账号对应的环境变量名 |
+| `password_env` | 是 | 授权码/应用密码对应的环境变量名 |
+| `folder` / `mailbox` | 否 | 邮箱文件夹，默认 `INBOX` |
+| `port` | 否 | 默认 `993` |
+| `ssl` | 否 | 默认 `true` |
+| `since_days` | 否 | 只拉最近 N 天邮件 |
+| `from_filter` | 否 | IMAP FROM 过滤 |
+| `subject_filter` | 否 | IMAP SUBJECT 过滤 |
+| `criteria` | 否 | 自定义 IMAP 搜索条件，覆盖上述过滤 |
+| `link_from_body` | 否 | 从正文提取首个 `http(s)` 链接，默认 `true` |
+| `summary_max_chars` | 否 | 摘要截断长度，默认 `500` |
+| `body_format` | 否 | 摘要优先 `plain` 或 `html`，默认 `plain` |
+| `limit` | 否 | 最多条目数，默认 `50` |
+| `imap_id` | 否 | 强制发送 IMAP `ID`；网易系域名默认开启 |
+
+**凭证**：`host`、`user`、密码**均不写入** `config.yaml`，只在 config 里写环境变量名，实际值放在 `.env`（本地）或 GitHub Secrets（CI）。
+
+#### 本地：`.env`
+
+```bash
+cp .env.example .env
+# 编辑 .env，填入 EMAIL_163_HOST / EMAIL_163_USER / EMAIL_163_PASSWORD
+python scripts/generate_rss.py
+```
+
+`.env` 位于仓库根目录，已被 `.gitignore`；`generate_rss.py` 启动时会自动加载。
+
+#### GitHub Actions：Repository Secrets
+
+在仓库 **Settings** → **Secrets and variables** → **Actions** → **New repository secret** 添加与 config 中 `*_env` **同名**的 Secret：
+
+| Secret 名称 | 示例值 | 说明 |
+|-------------|--------|------|
+| `EMAIL_163_HOST` | `imap.163.com` | IMAP 服务器 |
+| `EMAIL_163_USER` | `you@163.com` | 邮箱账号 |
+| `EMAIL_163_PASSWORD` | `xxxx` | 163 授权码（非登录密码） |
+
+workflow 需把 Secret 注入为环境变量（见 `.github/workflows/generate-rss.yml` 中 `Generate RSS` 步骤的 `env`）。Secret 名称必须与 `config.yaml` 里的 `host_env` / `user_env` / `password_env` 字符串**完全一致**。
+
+Gmail 等需开启 IMAP 并使用[应用专用密码](https://support.google.com/accounts/answer/185833)。
+
+**网易邮箱（163 / 126 / yeah）**：登录后需发送 IMAP `ID` 命令，代码已对 `*.163.com` 等域名自动处理；其他服务商若遇 `SELECT` 失败可设 `imap_id: true`。
+
+**条目映射**：`Subject` → `title`；`Date` → `published`；正文 → `summary`；正文首个 URL → `link`（可关）。
 
 ---
 
