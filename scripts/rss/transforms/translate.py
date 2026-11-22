@@ -1,6 +1,10 @@
 """Translate transform using easytranslator (default) or other providers."""
 from __future__ import annotations
 
+import logging
+import multiprocessing
+import re
+import time
 from typing import Any
 
 from .registry import register
@@ -28,30 +32,17 @@ LANG_MAP = {
     "ru": "Russian",
 }
 
-# easytranslator 引擎优先级（数字越小越优先）
-EASYTRANSLATOR_ENGINES = [
-    {"id": "alibaba", "name": "Alibaba", "priority": 10},
-    {"id": "baidu", "name": "Baidu", "priority": 10},
-    {"id": "modernMt", "name": "ModernMT", "priority": 20},
-    {"id": "iciba", "name": "Iciba", "priority": 15},
-    {"id": "google", "name": "Google", "priority": 4},
-    {"id": "bing", "name": "Bing", "priority": 5},
-    {"id": "lingvanex", "name": "Lingvanex", "priority": 20},
-    {"id": "itranslate", "name": "Itranslate", "priority": 20},
-    {"id": "sysTran", "name": "SysTran", "priority": 20},
-    {"id": "argos", "name": "ArgoS", "priority": 20},
-    {"id": "reverso", "name": "Reverso", "priority": 20},
-    {"id": "deepl", "name": "DeepL", "priority": 5},
+# 仅使用现有的免凭证引擎，按优先级尝试，不再轮询全部引擎。
+EASYTRANSLATOR_ENGINES = (
+    {"id": "google", "name": "Google", "priority": 1},
+    {"id": "bing", "name": "Bing", "priority": 2},
     {"id": "cloudTranslation", "name": "Cloud Translation", "priority": 3},
-    {"id": "qqTranSmart", "name": "QQ Translate Smart", "priority": 5},
-    {"id": "translateCom", "name": "Translate Com", "priority": 15},
-    {"id": "sogou", "name": "Sogou", "priority": 5},
-    {"id": "qqFanyi", "name": "QQ Fanyi", "priority": 10},
-    {"id": "papago", "name": "Papago", "priority": 15},
-    {"id": "youdao", "name": "Youdao", "priority": 15},
-    {"id": "iflyrec", "name": "iFlyrec", "priority": 30},
-    {"id": "caiyun", "name": "Caiyun", "priority": 15},
-]
+)
+REQUEST_TIMEOUT_SECONDS = 7
+BATCH_TIMEOUT_SECONDS = 45
+MAX_CONSECUTIVE_ENGINE_FAILURES = 2
+_PROVIDER_PAGE_PATTERN = re.compile(r"<(?:!doctype\s+html|html\b|body\b)", re.I)
+logger = logging.getLogger(__name__)
 
 
 def _resolve_dest_lang(target: str) -> str:
@@ -85,35 +76,105 @@ def _resolve_source_lang(text: str, target: str, configured: str) -> str:
     return configured
 
 
-def _validate_translation(text: str, target: str) -> None:
-    """中文目标语言必须含汉字，否则视为翻译失败（如 API 返回乱码）。"""
+def _validate_translation(text: object, target: str) -> str:
+    """Reject provider errors even when their localized notices contain Hanzi."""
+    if not isinstance(text, str) or not text.strip():
+        raise RuntimeError("翻译结果为空")
+    if (
+        "older version of deepl" in " ".join(text.casefold().split())
+        or _PROVIDER_PAGE_PATTERN.search(text)
+    ):
+        raise RuntimeError("翻译服务返回了错误页面")
     if _target_requires_chinese(target) and not _contains_chinese(text):
-        raise RuntimeError(f"翻译结果无效（目标 {target} 无中文）: {text[:80]!r}")
+        raise RuntimeError(f"翻译结果无效（目标 {target} 无中文）")
+    return text.strip()
+
+
+def _translate_with_fallback(client, engines, text, target, source, failures):
+    """Validate the response before accepting it or trying the next engine."""
+    for engine in engines:
+        engine_id = engine["id"]
+        if failures.get(engine_id, 0) >= MAX_CONSECUTIVE_ENGINE_FAILURES:
+            continue
+        try:
+            # easytranslator mutates priority in-place; its ranking should not
+            # affect fallback order for this batch or mutate shared configuration.
+            result = client.translate_with_translator(
+                engine.copy(), text, _resolve_dest_lang(target), source
+            )
+            if result.get("status") != "success":
+                raise RuntimeError("引擎请求失败")
+            translated = _validate_translation(result.get("translated_text"), target)
+        except Exception:
+            failures[engine_id] = failures.get(engine_id, 0) + 1
+        else:
+            failures[engine_id] = 0
+            return translated
+    return None
+
+
+def _translate_worker(output, engines, queries, target):
+    """Send per-field results so a deadline does not lose partial progress."""
+    with output:
+        try:
+            from easytranslator import EasyTranslator
+
+            client = EasyTranslator(translators=[engine.copy() for engine in engines])
+            client.TIMEOUT = REQUEST_TIMEOUT_SECONDS
+        except Exception:
+            logger.warning("无法初始化翻译服务", exc_info=True)
+            return
+        failures = {}
+        for index, (text, source) in enumerate(queries):
+            result = _translate_with_fallback(client, engines, text, target, source, failures)
+            output.send((index, result))
 
 
 class EasyTranslatorProvider:
     def __init__(self, engines: list[dict] | None = None) -> None:
-        try:
-            from easytranslator import EasyTranslator
-        except ImportError as exc:
-            raise ImportError(
-                "translate transform 需要 easytranslator: pip install easytranslator"
-            ) from exc
-        self._client = EasyTranslator(translators=engines or EASYTRANSLATOR_ENGINES)
-
-    def translate(self, text: str, *, target: str, source: str = "auto") -> str:
-        result = self._client.translate(
-            text=text,
-            dest_lang=_resolve_dest_lang(target),
-            src_lang=source,
-            proxies=[],
+        self._engines = sorted(
+            engines or EASYTRANSLATOR_ENGINES, key=lambda engine: engine["priority"]
         )
-        if result.get("status") != "success":
-            raise RuntimeError(f"翻译失败: {result}")
-        translated = result.get("translated_text")
-        if not translated:
-            raise RuntimeError(f"翻译结果为空: {result}")
-        return translated
+
+    def translate_many(self, queries: list[tuple[str, str]], *, target: str) -> list[str | None]:
+        if not queries:
+            return []
+        results: list[str | None] = [None] * len(queries)
+        context = multiprocessing.get_context("spawn")
+        receiver, sender = context.Pipe(duplex=False)
+        worker = context.Process(
+            target=_translate_worker, args=(sender, self._engines, queries, target), daemon=True
+        )
+        deadline = time.monotonic() + BATCH_TIMEOUT_SECONDS
+        try:
+            worker.start()
+            sender.close()
+            for _ in queries:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0 or not receiver.poll(remaining):
+                    logger.warning("翻译超时，停止等待剩余字段")
+                    break
+                try:
+                    index, text = receiver.recv()
+                except EOFError:
+                    break
+                results[index] = text
+        except OSError:
+            logger.warning("无法启动或读取翻译进程", exc_info=True)
+        finally:
+            receiver.close()
+            sender.close()
+            if worker.pid is not None:
+                worker.join(timeout=0.1)
+                if worker.is_alive():
+                    worker.terminate()
+                    worker.join(timeout=0.2)
+                if worker.is_alive():
+                    worker.kill()
+                    worker.join(timeout=0.2)
+            if not worker.is_alive():
+                worker.close()
+        return results
 
 
 _PROVIDERS: dict[str, type] = {
@@ -144,76 +205,57 @@ class TranslateTransform(Transform):
         entry_fields = config.get("fields") or ["title", "summary"]
         feed_fields = config.get("feed_fields") or []
 
-        self._translate_scope(
-            ctx,
-            config,
-            provider,
-            target,
-            src_lang,
-            scope="entry",
-            fields=entry_fields,
-            iter_fields=lambda: iter_entry_fields(ctx, entry_fields),
-            apply_result=lambda idx, name, val: set_entry_field(ctx, idx, name, val),
-        )
-        self._translate_scope(
-            ctx,
-            config,
-            provider,
-            target,
-            src_lang,
-            scope="feed",
-            fields=feed_fields,
-            iter_fields=lambda: (
-                (name, text) for name, text in iter_feed_fields(ctx, feed_fields)
-            ),
-            apply_result=lambda _idx, name, val: set_feed_field(ctx, name, val),
-        )
+        fields = [
+            ("entry", index, name, text)
+            for index, name, text in iter_entry_fields(ctx, entry_fields)
+        ] + [
+            ("feed", None, name, text)
+            for name, text in iter_feed_fields(ctx, feed_fields)
+        ]
 
-    def _translate_scope(
-        self,
-        ctx: TransformContext,
-        config: dict[str, Any],
-        provider: EasyTranslatorProvider,
-        target: str,
-        src_lang: str,
-        *,
-        scope: str,
-        fields: list[str],
-        iter_fields,
-        apply_result,
-    ) -> None:
-        if not fields:
-            return
-
-        for item in iter_fields():
+        def apply_result(scope, index, name, value):
             if scope == "entry":
-                index, name, text = item
+                set_entry_field(ctx, index, name, value)
             else:
-                name, text = item
-                index = None
+                set_feed_field(ctx, name, value)
 
+        pending = []
+        for scope, index, name, text in fields:
             key = transform_cache.cache_key(self.type, config, scope, name, text)
             cached = transform_cache.get(key)
             if cached is not None:
                 try:
-                    _validate_translation(cached, target)
-                    apply_result(index, name, cached)
-                    continue
+                    cached = _validate_translation(cached, target)
                 except RuntimeError:
-                    pass
+                    transform_cache.discard(key)
+                else:
+                    apply_result(scope, index, name, cached)
+                    continue
 
             if _target_requires_chinese(target) and _predominantly_chinese(text):
                 continue
+            pending.append((scope, index, name, text, key))
 
-            effective_src = _resolve_source_lang(text, target, src_lang)
+        queries = [
+            (text, _resolve_source_lang(text, target, src_lang))
+            for _, _, _, text, _ in pending
+        ]
+        translated = provider.translate_many(queries, target=target) if queries else []
+        failures = 0
+        for (scope, index, name, _, key), value in zip(pending, translated, strict=True):
             try:
-                translated = provider.translate(
-                    text, target=target, source=effective_src
-                )
-                _validate_translation(translated, target)
-                transform_cache.set(key, translated)
-                apply_result(index, name, translated)
-            except Exception as exc:
+                value = _validate_translation(value, target)
+            except RuntimeError:
+                failures += 1
+                exc = RuntimeError("翻译服务未返回有效译文")
                 mode = handle_field_error(config, exc)
-                if mode == "skip" and scope == "entry" and index is not None:
+                if mode == "skip" and scope == "entry":
                     ctx.entries[index]["_skip"] = True
+            else:
+                transform_cache.set(key, value)
+                apply_result(scope, index, name, value)
+        if failures:
+            logger.warning(
+                "%d/%d 个字段未译成，按 on_error=%s 处理",
+                failures, len(pending), config.get("on_error", "keep"),
+            )

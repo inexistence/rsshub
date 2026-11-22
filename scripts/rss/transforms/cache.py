@@ -43,3 +43,7 @@ def set(key: str, value: str) -> None:
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     path = CACHE_DIR / f"{key}.txt"
     path.write_text(value, encoding="utf-8")
+
+
+def discard(key: str) -> None:
+    (CACHE_DIR / f"{key}.txt").unlink(missing_ok=True)

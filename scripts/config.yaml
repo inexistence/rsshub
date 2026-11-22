@@ -23,15 +23,15 @@ feeds:
     feed:
       title: "Claude Blog"
       description: "Product news and best practices for teams building with Claude"
-      link: "https://claude.com/blog"
+      link: "https://claude.com/resources/articles"
     source:
       type: html
-      url: "https://claude.com/blog"
-      item_selector: "article.card_blog_list_wrap"
+      url: "https://claude.com/resources/articles"
+      item_selector: "div[class*='ResourcesIndex-'][class$='__grid'] > a[href]"
       selectors:
-        title: "h3.card_blog_list_title"
-        link: "a[href*='/blog/']@href"
-        published: "div[fs-list-field=date]"
+        title: "h3"
+        link: "@href"
+        published: "span[class*='ResourceCard-'][class$='__meta']"
     variants:
       - output: zh.xml
         feed:
@@ -49,11 +49,11 @@ feeds:
     source:
       type: html
       url: "https://www.anthropic.com/engineering"
-      item_selector: "article[class*='ArticleList']"
+      item_selector: "article[data-listing-row]"
       selectors:
-        title: "h2|h3"
-        link: "a[href*='/engineering/']@href"
-        published: "div[class*='__date']"
+        title: "h3 a[href]"
+        link: "h3 a[href]@href"
+        published: "time"
     variants:
       - output: zh.xml
         feed:
