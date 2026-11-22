@@ -128,6 +128,7 @@ source:
 
 - `selector` — 取节点文本
 - `selector@attr` — 取属性（如 `a@href`、`time@datetime`）
+- `@attr` — 取条目容器自身的属性（如容器是链接时用 `@href`）
 - `a|b` — 优先 `a`，没有再试 `b`
 - 兼容旧字段名 `item_map`（同 `selectors`）
 

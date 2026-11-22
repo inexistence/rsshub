@@ -10,7 +10,8 @@ from ..constants import DEFAULT_HEADERS
 def _select_one(parent, spec: str, base_url: str):
     """
     在 parent (BeautifulSoup 节点) 内按 spec 取值。
-    spec: "selector" 取文本；"selector@attr" 取属性；支持多个候选用 | 分隔。
+    spec: "selector" 取文本；"selector@attr" 取子节点属性；"@attr" 取当前节点属性。
+    支持多个候选用 | 分隔。
     """
     if not spec or not parent:
         return None
@@ -20,7 +21,7 @@ def _select_one(parent, spec: str, base_url: str):
         if "@" in part:
             sel, attr = part.split("@", 1)
             sel, attr = sel.strip(), attr.strip()
-            node = parent.select_one(sel)
+            node = parent.select_one(sel) if sel else parent
             if node and attr:
                 val = node.get(attr)
                 if val and attr == "href" and base_url:
