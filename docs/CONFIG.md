@@ -298,7 +298,7 @@ transforms:
 | `feed_fields` | `[]` | 要翻译的**频道**字段，如 `[title, description]` |
 | `source` | `auto` | 源语言 |
 | `provider` | `easytranslator` | 翻译后端 |
-| `engines` | 代码内默认 | 覆盖 easytranslator 引擎优先级列表 |
+| `engines` | Google、Bing、Cloud Translation | 覆盖 easytranslator 引擎列表，按 `priority` 从小到大尝试 |
 | `on_error` | `keep` | 失败策略，见下 |
 
 **`on_error`**
@@ -317,7 +317,9 @@ transforms:
 
 **翻译缓存**：原文 + 配置不变时复用 `.cache/transforms/`；CI 经 `actions/cache` 跨 run 持久化。
 
-**中文校验**：目标为 `zh-CN` 等时，译文必须含汉字；否则视为失败，保留英文且不缓存乱码。
+**译文校验**：HTML 错误页、DeepL 更新提示和空结果都不能作为译文；中文译文还必须含汉字。缓存命中也会校验，无效的缓存会删除并重新尝试。
+
+**服务超时**：单次网络请求设置 7 秒超时；翻译步骤最多等待 45 秒，已得到的有效译文仍会应用。引擎连续失败两次后，本步骤不再使用该引擎。所有引擎失败或超时的字段按 `on_error` 处理，默认保留原文且不缓存。
 
 ---
 
